@@ -47,6 +47,75 @@ $.fn.serializeObject = function(){
     return o;
 };
 
+
+//Draw
+var Draw = {};
+Draw.init = function() {
+	Draw.canvas = document.createElement('canvas');
+	Draw.canvas.height = 400;
+	Draw.canvas.width = 800;
+	document.getElementsByTagName('article')[0].appendChild(Draw.canvas);
+
+	//Draw.canvas
+	Draw.canvas.offset = $(Draw.canvas).offset();
+	Draw.ctx = Draw.canvas.getContext("2d");
+	Draw.ctx.rect(0, 0, Draw.canvas.width, Draw.canvas.height);
+	Draw.ctx.fillStyle = "white";
+	Draw.ctx.fill();
+	Draw.ctx.strokeStyle = "#123";
+	Draw.ctx.lineWidth = 2;
+	Draw.ctx.lineCap = "round";
+	Draw.socket = io.connect('http://localhost:4000');
+	Draw.socket.on('draw', function(data) {
+		console.log("history");
+		console.log(data);
+		for (var i = 0, limit = data.length; i < limit; i ++) {
+			Draw.draw(data[i].x, data[i].y, data[i].type,data[i].color,data[i].stroke);
+		}
+		
+	});
+
+	Draw.draw = function(x, y, type,color,stroke) {
+		Draw.ctx.strokeStyle = color;
+		Draw.ctx.lineWidth = stroke;
+		//console.log('x: '+x+" y: "+y+" color: "+Draw.ctx.strokeStyle+" stroke: "+stroke);
+		if (type === "dragstart") {
+			Draw.ctx.beginPath();
+			return Draw.ctx.moveTo(x, y);
+		} else if (type === "drag") {
+			Draw.ctx.lineTo(x, y);
+			return Draw.ctx.stroke();
+		} else {
+			return Draw.ctx.closePath();
+		}
+	};
+
+	Draw.sendImage = function () {
+		var img = Draw.canvas.toDataURL('image/jpeg');
+		$.ajax({
+			type: "POST",
+			url: "/save.js",
+			data: img,
+			dataType: 'json',
+			success: function(data) {
+				console.log("png sent");
+			},
+			fail: function() {
+				console.log("png failed");
+			}
+		});
+	};
+
+	
+};
+
+
+
+
+
+
+
+
 var collabio = {
 	socket: io.connect('http://'+document.domain),
 	PeerConnection: window.PeerConnection || window.webkitPeerConnection00 || window.webkitRTCPeerConnection,
@@ -124,6 +193,20 @@ $(document).ready(function(){
 		});
 		$("ul.conversation").scrollTop($("ul.conversation").height());
 	});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 });
 
 //})();

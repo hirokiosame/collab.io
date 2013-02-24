@@ -84,8 +84,7 @@ app.post('/r/:id', function(req, res){
 var	server = http.createServer(app).listen(app.get('port'), function(){
 		console.log("Express server listening on port " + app.get('port'));
 	}),
-	io = require('socket.io').listen(server, { log: false }),
-	webRTC = require('webrtc.io').listen(server);
+	io = require('socket.io').listen(server, { log: false });
 
 
 
