@@ -8,7 +8,8 @@ var express = require('express'),
 	user = require('./routes/user'),
 	http = require('http'),
 	path = require('path'),
-	app = express();
+	app = express(),
+	fs = require('fs');
 
 app.configure(function(){
   app.set('port', process.env.PORT || 80);
@@ -57,6 +58,12 @@ function joinUser(roomId, userId, userName){
 app.get('/', function(req, res){
 	res.sendfile('./routes/index.html');
 });
+
+//webrtc
+app.get('/rtc', function(req, res){
+	res.sendfile('./routes/webrtc.html');
+});
+
 
 //Join Room
 app.get('/r/:id', function(req, res){
@@ -262,6 +269,15 @@ io.sockets.on('connection', function (socket) {
 
 	/* Drawing */
 	socket.on('drawClick', function(data) {
+		if (data[0].color == "#fff") {
+			rooms[user.roomId].drawing = [];
+		}
+		rooms[user.roomId].drawing = rooms[user.roomId].drawing.concat(data);
+		//limit broadcast to users in room
+		io.sockets.in(user.roomId).emit('draw', data);
+	});
+	/*
+	socket.on('drawClick', function(data) {
 		var data = {
 			x: data.x,
 			y: data.y,
@@ -279,8 +295,24 @@ io.sockets.on('connection', function (socket) {
 		//limit broadcast to users in room
 		io.sockets.in(user.roomId).emit('draw', [data]);
 	});
+*/
 
+	//Evernote
+	socket.on('evernoteSave', function(data) {
+
+		console.log("Saving to evernote...");
+		var base64Data = data.path.replace(/^data:image\/png;base64,/, "");
+		require("fs").writeFile("./images/"+user.roomId+".png", base64Data, 'base64', function(err) {
+			console.log(err);
+		});
+
+		//var spawn = require('child_process').spawn;
+		//var evernote = spawn('python', ['./evernote/EDAMTest.py',require('path').dirname(require.main.filename)+"/images/"+user.roomId+".png", rooms[user.roomId].questions[data.qid].text, rooms[user.roomId].questions[data.qid]].text);
+
+		var sys = require('sys')
+		var exec = require('child_process').exec;
+		function puts(error, stdout, stderr) { sys.puts(stdout) }
+		exec("python '"+require('path').dirname(require.main.filename)+"/evernote/EDAMTest.py' '"+require('path').dirname(require.main.filename)+"/images/"+user.roomId+".png' 'a' 'b'", puts);
+	});
 });
-
-
 

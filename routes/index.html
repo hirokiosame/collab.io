@@ -238,6 +238,7 @@ $(document).ready(function(){
 		data.forEach(function(e, i){
 			if( e != null ){
 				var html = '<li qid="'+e.id+'"><div><a class="up">&#9650;</a> ' + e.votes + ' <a class="down">&#9660;</a></div>'+ e.text;
+				html += ' <a class="evernote" qid="'+e.id+'">(save to Evernote)</a>';
 				if( collabio.userId == collabio.adminId ){
 					html += ' <a class="remove">&#x00d7;</a>';
 				}
@@ -259,70 +260,84 @@ $(document).ready(function(){
 	});
 
 
+	/* Save to Evernote */
+	$(document).on('click', '.evernote', function(e) {
+		collabio.socket.emit('evernoteSave', {'qid' : $(this).attr('qid'), path: $('canvas').get(0).toDataURL('img/png')});
+	});
 
 
 
 	/* Drawing */
-	Draw.init();
-	$(window).on('resize',function() {
-		 Draw.canvas.offset = $(Draw.canvas).offset();
-	});
-
-    $('canvas').on('drag dragstart dragend', function(e) {
-      var offset, type, x, y;
-      type = e.handleObj.type;
-      offset = $(this).offset();
-      
-      console.log("offset")
-      console.log(offset)
-     
-      e.offsetX = e.clientX - Draw.canvas.offset.left + window.scrollX;
-      e.offsetY = e.clientY - Draw.canvas.offset.top + window.scrollY;
-      x = e.offsetX;
-      y = e.offsetY;
-      Draw.draw(x, y, type,Draw.ctx.strokeStyle,Draw.ctx.lineWidth);
-      Draw.socket.emit('drawClick', {
-        x: x,
-        y: y,
-        type: type,
-        color: Draw.ctx.strokeStyle
-      });
-    });
-
-
-	$('#clear').on('click',function(){
-		console.log("clear")
-		Draw.draw(0, 0, "dragstart","#fff",10000);
-		Draw.draw(400, 800, "drag","#fff",10000);
-		Draw.draw(400, 800, "dragend","#fff",10000);
-	 
-		Draw.socket.emit('drawClick', {
-			x: 0,
-			y: 0,
-			type: "dragstart",
-			color: "#fff",
-			stroke:10000
-		});
-		Draw.socket.emit('drawClick', {
-			x: 400,
-			y: 800,
-			type: "drag",
-			color: "#fff",
-			stroke:10000
-		});
-		Draw.socket.emit('drawClick', {
-			x: 400,
-			y: 800,
-			type: "dragend",
-			color: "#123",
-			stroke:2
+		Draw.init();
+		Draw.chunk = [];
+		$(window).on('resize',function() {
+			 Draw.canvas.offset = $(Draw.canvas).offset();
 		});
 
-		Draw.ctx.strokeStyle = "#123";
-		Draw.ctx.lineWidth = 2;
-	})
+		$('canvas').on('drag dragstart dragend', function(e) {
 
-	Draw.socket.emit('join',{});
+			var offset, type, x, y;
+			type = e.handleObj.type;
+			offset = $(this).offset();
+			
+			if (e.type =='dragstart') {
+				 Draw.chunk = [];
+			}
+		 
+			e.offsetX = e.clientX - Draw.canvas.offset.left + window.scrollX;
+			e.offsetY = e.clientY - Draw.canvas.offset.top + window.scrollY;
+			x = e.offsetX;
+			y = e.offsetY;
+			Draw.draw(x, y, type,Draw.ctx.strokeStyle,Draw.ctx.lineWidth);
+			var emitData = {
+				x: x,
+				y: y,
+				type: type,
+				color: Draw.ctx.strokeStyle
+			};
+
+			Draw.chunk.push(emitData);
+			if (e.type =='dragend') {
+				console.log('send')
+				console.log(Draw.chunk)
+				 Draw.socket.emit('drawClick', Draw.chunk);
+			}
+		});
+
+
+		$('#clear').on('click',function(){
+			console.log("clear");
+			Draw.draw(0, 0, "dragstart","#fff",10000);
+			Draw.draw(400, 800, "drag","#fff",10000);
+			Draw.draw(400, 800, "dragend","#fff",10000);
+		 
+			var clear = [{
+				x: 0,
+				y: 0,
+				type: "dragstart",
+				color: "#fff",
+				stroke:10000
+			},{
+				x: 400,
+				y: 800,
+				type: "drag",
+				color: "#fff",
+				stroke:10000
+			},{
+				x: 400,
+				y: 800,
+				type: "dragend",
+				color: "#123",
+				stroke:2
+			}];
+			Draw.socket.emit('drawClick',clear);
+			
+			Draw.ctx.strokeStyle = "#123";
+			Draw.ctx.lineWidth = 2;
+		})
+
+		Draw.socket.emit('join',{});
+
 
 });
 window.Draw = Draw;
