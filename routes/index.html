@@ -106,7 +106,7 @@ Draw.init = function() {
 		});
 	};
 
-	
+
 };
 
 
@@ -176,6 +176,8 @@ $(document).ready(function(){
 		$('div.modal.getRoom').modal('hide');
 	});
 
+
+	/* Chat */
 	//Send Chat Message
 	$("div.chat form").submit(function(e){
 		e.preventDefault();
@@ -195,11 +197,66 @@ $(document).ready(function(){
 	});
 
 
+	/* Questions */
+	$(".questions form").submit(function(e){
+		e.preventDefault();
+		collabio.socket.emit('askQuestion', $(this).serializeObject());
+	});
+
+
+	$(document).on('click', '.upvotebutton', function(e) {
+		upvote($(this).attr('qid'));
+	});
+
+	$(document).on('click', '.downvotebutton', function(e) {
+		downvote($(this).attr('qid'));
+	});
+
+	$(document).on('click', '.removebutton', function(e) {
+		requestRemove($(this).attr('qid'));
+	});	
+
+
+	// update page in response to data push from server
+	collabio.socket.on('update', function(data){
+		adminFlag = data.admin;
+		console.log(data);
+		cleanData = new Array();
+		data.questions.forEach(function(elem) {
+			if (elem !== undefined && elem !== null) cleanData.push(elem);
+		});
+
+		cleanData.sort(function(a, b) {
+			var aID = a.votes;
+			var bID = b.votes;
+			return (aID == bID) ? 0 : (aID > bID) ? -1 : 1;
+		});
+		$('#questions').html('');
+		var newHTML = '';
+		$.each(cleanData, function(i, val) {
+			newHTML += '<li class="question">'+ val.question +' ('+val.votes+' votes) <div class="buttons"> <a href="#" class="upvotebutton" qid="'+val.qid+'">&#9650;</a><a href="#" class="downvotebutton" qid="'+val.qid+'">&#9660;</a>';
+			if (adminFlag === true) newHTML += '<a href="#" class="removebutton" qid="'+val.qid+'">&#x00d7;</a>';
+			newHTML += '</div></li>';
+		});
+
+		$('#questions').html(newHTML);
+	});
 
 
 
+	// question UI handlers
+	function requestRemove(qid) {
+		if (confirm("Remove this question?"))
+			collabio.socket.emit('remove', qid);
+	}
 
+	function upvote(qid) {
+		collabio.socket.emit('upvote', qid);
+	}
 
+	function downvote(qid) {
+		collabio.socket.emit('downvote', qid);
+	}
 
 
 
@@ -307,7 +364,11 @@ div.modal.getRoom form input.name{
 				</div>
 				<div class="span4 column right">
 					<div class="questions">
-						questions
+						<form>
+							<textarea id="question"></textarea>
+							<input type="submit" class="btn btn-primary" value="Ask">
+						</form>
+						<ul class="questions"></ul>
 					</div>
 					<video class="video"></video>
 				</div>
