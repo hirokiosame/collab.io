@@ -84,6 +84,13 @@ app.post('/r/:id', function(req, res){
 });
 
 
+//iPhone Canvas
+app.get('/r/:id/:user', function(req, res){
+	//Verify that the ids and the user exists
+	res.sendfile('./routes/index.html');
+});
+
+
 var	server = http.createServer(app).listen(app.get('port'), function(){
 		console.log("Express server listening on port " + app.get('port'));
 	}),
@@ -189,6 +196,7 @@ io.sockets.on('connection', function (socket) {
 	}
 	//Ask Question
 	socket.on('askQuestion', function(post) {
+		console.log(post);
 		var question = {
 			text: post.question,
 			upvotes: [],
@@ -269,7 +277,7 @@ io.sockets.on('connection', function (socket) {
 		rooms[user.roomId].drawing.push(data);
 
 		//limit broadcast to users in room
-		socket.broadcast.emit('draw', [data]);
+		io.sockets.in(user.roomId).emit('draw', [data]);
 	});
 
 });

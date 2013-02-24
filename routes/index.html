@@ -2,7 +2,7 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8">
-		<title>Bootstrap, from Twitter</title>
+		<title>Collab.io</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<meta name="description" content="">
 		<meta name="author" content="">
@@ -48,67 +48,6 @@ $.fn.serializeObject = function(){
 };
 
 
-//Draw
-var Draw = {};
-Draw.init = function() {
-	Draw.canvas = document.createElement('canvas');
-	Draw.canvas.height = 400;
-	Draw.canvas.width = 800;
-	document.getElementsByTagName('article')[0].appendChild(Draw.canvas);
-
-	//Draw.canvas
-	Draw.canvas.offset = $(Draw.canvas).offset();
-	Draw.ctx = Draw.canvas.getContext("2d");
-	Draw.ctx.rect(0, 0, Draw.canvas.width, Draw.canvas.height);
-	Draw.ctx.fillStyle = "white";
-	Draw.ctx.fill();
-	Draw.ctx.strokeStyle = "#123";
-	Draw.ctx.lineWidth = 2;
-	Draw.ctx.lineCap = "round";
-	Draw.socket = io.connect('http://localhost:4000');
-	Draw.socket.on('draw', function(data) {
-		console.log("history");
-		console.log(data);
-		for (var i = 0, limit = data.length; i < limit; i ++) {
-			Draw.draw(data[i].x, data[i].y, data[i].type,data[i].color,data[i].stroke);
-		}
-		
-	});
-
-	Draw.draw = function(x, y, type,color,stroke) {
-		Draw.ctx.strokeStyle = color;
-		Draw.ctx.lineWidth = stroke;
-		//console.log('x: '+x+" y: "+y+" color: "+Draw.ctx.strokeStyle+" stroke: "+stroke);
-		if (type === "dragstart") {
-			Draw.ctx.beginPath();
-			return Draw.ctx.moveTo(x, y);
-		} else if (type === "drag") {
-			Draw.ctx.lineTo(x, y);
-			return Draw.ctx.stroke();
-		} else {
-			return Draw.ctx.closePath();
-		}
-	};
-
-	Draw.sendImage = function () {
-		var img = Draw.canvas.toDataURL('image/jpeg');
-		$.ajax({
-			type: "POST",
-			url: "/save.js",
-			data: img,
-			dataType: 'json',
-			success: function(data) {
-				console.log("png sent");
-			},
-			fail: function() {
-				console.log("png failed");
-			}
-		});
-	};
-
-
-};
-
 
 
 
@@ -145,7 +84,67 @@ var collabio = {
 			alert('Your browser is not supported or you have to turn on flags. In chrome you go to chrome://flags and turn on Enable PeerConnection remember to restart chrome');
 		}
 	}
-}
+};
+//Draw
+var Draw = {};
+Draw.init = function() {
+	Draw.canvas = document.createElement('canvas');
+	Draw.canvas.height = 400;
+	Draw.canvas.width = $(".left").width();
+
+	$('#draw').append(Draw.canvas).width(Draw.canvas.width);
+
+	//Draw.canvas
+	Draw.canvas.offset = $(Draw.canvas).offset();
+	Draw.ctx = Draw.canvas.getContext("2d");
+	Draw.ctx.rect(0, 0, Draw.canvas.width, Draw.canvas.height);
+	Draw.ctx.fillStyle = "white";
+	Draw.ctx.fill();
+	Draw.ctx.strokeStyle = "#123";
+	Draw.ctx.lineWidth = 2;
+	Draw.ctx.lineCap = "round";
+	Draw.socket = collabio.socket;
+	Draw.socket.on('draw', function(data) {
+		for (var i = 0, limit = data.length; i < limit; i ++) {
+			Draw.draw(data[i].x, data[i].y, data[i].type,data[i].color,data[i].stroke);
+		}
+		
+	});
+
+	Draw.draw = function(x, y, type, color, stroke) {
+		Draw.ctx.strokeStyle = color;
+		Draw.ctx.lineWidth = stroke;
+		//console.log('x: '+x+" y: "+y+" color: "+Draw.ctx.strokeStyle+" stroke: "+stroke);
+		if (type === "dragstart") {
+			Draw.ctx.beginPath();
+			return Draw.ctx.moveTo(x, y);
+		} else if (type === "drag") {
+			Draw.ctx.lineTo(x, y);
+			return Draw.ctx.stroke();
+		} else {
+			return Draw.ctx.closePath();
+		}
+	};
+
+	Draw.sendImage = function () {
+		var img = Draw.canvas.toDataURL('image/jpeg');
+		$.ajax({
+			type: "POST",
+			url: "/save.js",
+			data: img,
+			dataType: 'json',
+			success: function(data) {
+				console.log("png sent");
+			},
+			fail: function() {
+				console.log("png failed");
+			}
+		});
+	};
+};
+
+
+
 $(document).ready(function(){
 
 	//Inquire Room
@@ -187,6 +186,7 @@ $(document).ready(function(){
 	$("div.chat form").submit(function(e){
 		e.preventDefault();
 		collabio.socket.emit('sendChat', $(this).serializeObject());
+		$(this)[0].reset();
 	});
 
 	//Receive Chat Messages
@@ -270,23 +270,26 @@ $(document).ready(function(){
 		 Draw.canvas.offset = $(Draw.canvas).offset();
 	});
 
-	$('canvas').on('drag dragstart dragend', function(e) {
-		var offset, type, x, y;
-		type = e.handleObj.type;
-		offset = $(this).offset();
-	 
-		e.offsetX = e.clientX - Draw.canvas.offset.left + window.scrollX;
-		e.offsetY = e.clientY - Draw.canvas.offset.top + window.scrollY;
-		x = e.offsetX;
-		y = e.offsetY;
-		Draw.draw(x, y, type,Draw.ctx.strokeStyle,Draw.ctx.lineWidth);
-		Draw.socket.emit('drawClick', {
-			x: x,
-			y: y,
-			type: type,
-			color: Draw.ctx.strokeStyle
-		});
-	});
+    $('canvas').on('drag dragstart dragend', function(e) {
+      var offset, type, x, y;
+      type = e.handleObj.type;
+      offset = $(this).offset();
+      
+      console.log("offset")
+      console.log(offset)
+     
+      e.offsetX = e.clientX - Draw.canvas.offset.left + window.scrollX;
+      e.offsetY = e.clientY - Draw.canvas.offset.top + window.scrollY;
+      x = e.offsetX;
+      y = e.offsetY;
+      Draw.draw(x, y, type,Draw.ctx.strokeStyle,Draw.ctx.lineWidth);
+      Draw.socket.emit('drawClick', {
+        x: x,
+        y: y,
+        type: type,
+        color: Draw.ctx.strokeStyle
+      });
+    });
 
 
 	$('#clear').on('click',function(){
@@ -328,6 +331,139 @@ window.Draw = Draw;
 //})();
 </script>
 <style>
+* {
+	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-weight: 200;
+}
+	
+#draw {
+	background: #fff;
+	position: relative;
+	display: block;
+	width: 800px;
+	height: 400px;
+
+}
+
+#draw .header {
+	position: absolute;
+	height: 49px;
+	width: 100%;
+	background-color: #fff;
+	border-bottom: 1px solid #cdcdcd;
+
+}
+
+#draw .header span {
+	cursor:pointer;
+	
+}
+
+#draw .header span {
+	border: 2px solid #fff;
+	min-height: 21px;
+	display: inline-block;
+	padding: 12px;
+	float: right;
+	border-left: 1px solid #cdcdcd;
+}
+#draw .header span:hover {
+	cursor:pointer;
+	border: 2px solid #222;
+}
+
+
+.GOTHAM {}
+.GOTHAM {}
+.GOTHAM {}
+.GOTHAM {}
+.GOTHAM {}
+.GOTHAM {}
+.GOTHAM {}
+
+
+
+#question_area a:visited {
+	color: #08c;
+	float: right;
+	text-decoration: none;
+}
+
+#question_area li {
+    list-style-type: none;
+}
+div.questions textarea {
+	min-width: 80%;
+	float: left;
+	max-width: 70%;
+	max-height: 25px;
+	border: 0px solid #cdcdcd;
+	border-bottom: 1px solid #cdcdcd;
+	margin: 0px;
+	box-shadow: none;
+	border-radius: 0;
+	font-size: 16px;
+	padding-left: 5%;
+	padding-right: 0;
+	padding-top: 4px;
+	padding-bottom: 10px;
+	font-weight: 100;
+}
+div.questions textarea:hover {
+	outline: none;
+
+}
+#quest_box {
+	width: 100%;
+}
+div.questions textarea:focus {
+	outline: none;
+	box-shadow: none;
+}
+
+#submitquestion {
+	width: 15%;
+	float: left;
+	height: 50px;
+	background: #fff;
+	border: 1px solid #cdcdcd;
+	border-top: 0;
+	font-size: 14px;
+	margin-top: -10px;
+	font-weight: 200;
+}
+#submitquestion:hover {
+	border: 2px solid #222;
+	float: left;
+	cursor:pointer;
+
+}
+
+.question {
+	height: 40px;
+	padding-top: 14px;
+	float: left;
+	width: 380px;
+	border: 10px solid #fff;
+	border-bottom: 1px solid #cdcdcd;
+}
+
+
+.MAIN {}
+.MAIN {}
+.MAIN {}
+.MAIN {}
+.MAIN {}
+.MAIN {}
+
+.left {
+	overflow:hidden;
+}
+.span4.column.right {
+	margin-left: 0;
+	width:34.188034188% !important;
+}
+
 html, body, .container-fluid, .row-fluid{
 	height:100%;
 	padding: 0 !important;
@@ -338,84 +474,153 @@ form{
 div.modal.getRoom{
 	width: 360px;
 	margin-left: -180px;
+	border-radius: 0;
+	font-weight: 100 !important;
 }
 div.modal.getRoom.in{
 	top: 20%;
 }
-div.modal.getRoom form input.name{
-	font-size: 20px;
-	padding: 3px 6px;
-	width: 315px;
-	height: auto;
-	margin-bottom: 10px;
+
+.getRoom .modal-body {
+	padding: 0 !important;
 }
+div.modal.getRoom form input.name{
+	font-size: 25px;
+	width: 330px;
+	border-radius: 0;
+	border: none;
+	border-bottom: 1px solid #cdcdcd;
+	box-shadow: none;
+	padding-left: 15px;
+	padding-right: 15px;
+	padding-top: 12px;
+	height: 50px;
+	font-weight: 100 !important;
+	text-align: center;
+}
+
+.Roman_button {
+	font-weight: 100 !important;
+	width: 360px;
+	border: 0px solid #222;
+	height: 67px;
+	background-color: #fff;
+	font-size: 22px;
+}
+
+.Roman_button:hover {
+	width: 360px;
+	background-color: #eee;
+}
+
 .column{
 	padding-top: 41px;
 	position: relative;
 }
 .column.left{
 	height: 100%;
-	border-right:1px solid #999;
+	border-right:1px solid #cdcdcd;
 }
 .column.left canvas{
 	width:100%;
-	height: 60%;
-	border-bottom: 1px solid #999;
+	border-bottom: 1px solid #cdcdcd;
 }
 .chat{
-	height: 40%;
+	height: 35%;
 }
 .chat ul.conversation{
-	background-color: #ccc;
 	overflow: scroll;
-	height: 220px;
+	height: 80%;
 }
 .chat ul.conversation span.userName{
 	font-weight:bold;
+	text-transform: uppercase;
+	font-style: italic;
+	color: #111;
+
+}
+.chat ul.conversation span.userName:after {
+	content: ":";
 }
 
+#chat_input {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+}
 
-ul.questions{
-	padding: 0;
-	margin: 0;
-	height: 500px;
-	overflow: scroll;
-	list-style: none;
+#chat_input input {
+	width: 100%;
+	border: 0px solid #cdcdcd;
+	border-top: 1px solid #cdcdcd;
+	margin: 0px;
+	box-shadow: none;
+	border-radius: 0;
+	font-size: 16px;
+	padding: 13px;
+	font-weight: 100;
 }
-ul.questions li div{
-	display: inline-block;
+
+.RomanBar {
+	background:#fff !important;
+	height: 49px;
+	box-shadow: none!important;
 }
-ul.questions li a:hover{
-	cursor: pointer;
-	text-decoration: none;
+.Roman-fluid {
+	margin-top: 9px;
 }
+
+.RomanBar .active a {
+	background: #fff !important;
+	box-shadow: none !important;
+	border: 2px solid #222;	
+
+}
+.RomanBar li a {
+	text-transform: uppercase !important;
+	font-size: 14px !important;
+	font-weight: 400;
+	height: 25px;
+	padding-top: 14px !important;
+	color: #000 !important;
+	border-left: 1px solid #cdcdcd;
+}
+
+.RomanBar li:hover {
+	background-color: #eee;
+}
+
+#draw {
+	min-height: 400px;
+}
+
 </style>
 	</head>
 
+
 	<body>
 		<div class="modal fade getRoom">
-			<div class="modal-header">
-				<h3 class="lead">Enter your name to create a room</h3>
-			</div>
 			<div class="modal-body">
 				<form class="form-inline">
-				<input type="text" class="name" name="name" placeholder="What's your name?">
-				<button class="btn btn-primary pull-right">Create Room</button>
+				<input type="text" class="name" name="name" placeholder="What's your name?" autocomplete="off">
+				<button class="Roman_button">Create Room!</button>
 				</form>
 			</div>
 		</div>
 		<div class="navbar navbar-fixed-top">
-			<div class="navbar-inner">
+			<div class="navbar-inner RomanBar">
 				<div class="container">
-					<button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse>
+					<button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
 						<span class="icon-bar"></span>
 						<span class="icon-bar"></span>
 						<span class="icon-bar"></span>
 					</button>
-					<a class="brand" href="#">Collab.io</a>
+				
 					<div class="nav-collapse collapse">
 						<ul class="nav">
-							<li class="active"><a href="#">Home</a></li>
+							<li><a href="../">collab.io</a></li>
+							<li><a href="../">Start a new room</a></li>
+							<li><a href="#">active Users</a></li>
 						</ul>
 					</div><!--/.nav-collapse -->
 				</div>
@@ -423,15 +628,15 @@ ul.questions li a:hover{
 		</div>
 
 		<div class="container-fluid">
-			<div class="row-fluid">
+			<div class="row-fluid Roman-fluid">
 				<div class="span8 column left">
-					<canvas class="draw"></canvas>
+					<div id="draw"><div class="header"><span id="clear">CLEAR</span></header></div></div>
 					<div class="chat">
 						<ul class="conversation">
 						</ul>
-						<div>
+						<div id="chat_input">
 							<form>
-								<input type="text" name="text">
+								<input type="text" placeholder="Chat here..." name="text">
 							</form>
 						</div>
 					</div>
@@ -439,8 +644,8 @@ ul.questions li a:hover{
 				<div class="span4 column right">
 					<div class="questions">
 						<form>
-							<textarea name="question" placeholder="Any questions?"></textarea>
-							<input type="submit" class="btn btn-primary" value="Ask">
+							<textarea name="question" placeholder="Ask your question here..."></textarea>
+							<input type="submit" id="submitquestion" class="" value="ASK">
 						</form>
 						<ul class="questions"></ul>
 					</div>
@@ -449,6 +654,7 @@ ul.questions li a:hover{
 			</div>
 		</div>
 		<script src="../js/bootstrap-modal.js"></script>
+		<script src="/js/jquery.event.drag-2.2.js"></script>
 
 	</body>
 </html>
