@@ -121,6 +121,9 @@ io.sockets.on('connection', function (socket) {
 		user.roomId = roomId;
 		user.roomAdmin = rooms[roomId].adminId;
 
+		//Join Socket Room
+		socket.join(user.roomId);
+
 		//Send Back Successful Creation of Room
 		socket.emit('roomAvailable', user);
 
@@ -141,14 +144,17 @@ io.sockets.on('connection', function (socket) {
 		user.roomId = roomId;
 		user.roomAdmin = rooms[roomId].adminId;
 
+		//Join Socket Room
+		socket.join(user.roomId);
+
 		//Send Back Successful Joining of Room
 		socket.emit('roomAvailable', user);
 
 		//Send Latest Chat Logs
-		io.sockets.emit('receiveChat', rooms[user.roomId].chatLog);
+		socket.emit('receiveChat', rooms[user.roomId].chatLog);
 
 		//Send Latest Questions
-		io.sockets.emit('receiveQuestions', rooms[user.roomId].questions);
+		socket.emit('receiveQuestions', rooms[user.roomId].questions);
 
 		//Send Latest Drawing
 		socket.emit('draw', rooms[user.roomId].drawing);
@@ -166,7 +172,7 @@ io.sockets.on('connection', function (socket) {
 		rooms[user.roomId].chatLog.push(log);
 
 		//Send Latest Chat Logs
-		io.sockets.emit('receiveChat', rooms[user.roomId].chatLog);
+		io.sockets.in(user.roomId).emit('receiveChat', rooms[user.roomId].chatLog);
 	});
 
 
@@ -191,7 +197,7 @@ io.sockets.on('connection', function (socket) {
 		rooms[user.roomId].questions.push(question);
 
 		//Send Latest Questions
-		io.sockets.emit('receiveQuestions', rooms[user.roomId].questions);
+		io.sockets.in(user.roomId).emit('receiveQuestions', rooms[user.roomId].questions);
 	});
 
 	//Downvote Question
@@ -210,7 +216,7 @@ io.sockets.on('connection', function (socket) {
 			downvotes.push(user.Id);
 
 		//Send Latest Questions
-		io.sockets.emit('receiveQuestions', rooms[user.roomId].questions);
+		io.sockets.in(user.roomId).emit('receiveQuestions', rooms[user.roomId].questions);
 	});
 
 	//Upvote Question
@@ -229,7 +235,7 @@ io.sockets.on('connection', function (socket) {
 			upvotes.push(user.Id);
 
 		//Send Latest Questions
-		io.sockets.emit('receiveQuestions', rooms[user.roomId].questions);
+		io.sockets.in(user.roomId).emit('receiveQuestions', rooms[user.roomId].questions);
 	});
 
 
@@ -241,7 +247,7 @@ io.sockets.on('connection', function (socket) {
 		}
 
 		//Send Latest Questions
-		io.sockets.emit('receiveQuestions', rooms[user.roomId].questions);
+		io.sockets.in(user.roomId).emit('receiveQuestions', rooms[user.roomId].questions);
 	});
 
 
