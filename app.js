@@ -33,16 +33,18 @@ var rooms = {}
 function createRoom(roomId, adminId, adminName){
 
 	var Room = {
+		id: roomId,
 		name: '',
+		adminId: adminId,
 		users: {},
 		chatLog: [],
-		questions: []
+		questions: [],
+		drawing: []
 	};
 	Room.users[adminId] = adminName;
 
 	rooms[roomId] = Room;
 	console.log("USER EVENT: Room Created with ID '"+roomId+"'' by '" + adminId + "'' who joined as '" + adminName + "'");
-	//console.log(Room);
 }
 
 function joinUser(roomId, userId, userName){
@@ -88,17 +90,16 @@ var	server = http.createServer(app).listen(app.get('port'), function(){
 	io = require('socket.io').listen(server, { log: false });
 
 
-qid = 0; // question id counter
-questions = [] // array of question objects, indexed by room ID
-
-
 io.sockets.on('connection', function (socket) {
 	var user = {
 		Id: Math.random().toString(36).substr(2, 8),
 		Name: undefined,
-		roomId: undefined
+		roomId: undefined,
+		roomAdmin: undefined
 	};
 
+	//Set Socket User
+	socket.set('userId', user.Id);
 	console.log("New User: " + user.Id);
 
 	//Print Userdata
@@ -118,9 +119,10 @@ io.sockets.on('connection', function (socket) {
 		//Get User ID to create new Room
 		createRoom(roomId, user.Id, user.Name);
 		user.roomId = roomId;
+		user.roomAdmin = rooms[roomId].adminId;
 
 		//Send Back Successful Creation of Room
-		socket.emit('roomAvailable', roomId);
+		socket.emit('roomAvailable', user);
 
 	});
 
@@ -137,15 +139,19 @@ io.sockets.on('connection', function (socket) {
 		//Get User ID to join Room
 		joinUser(roomId, user.Id, user.Name);
 		user.roomId = roomId;
+		user.roomAdmin = rooms[roomId].adminId;
 
 		//Send Back Successful Joining of Room
-		socket.emit('roomAvailable', roomId);
+		socket.emit('roomAvailable', user);
 
 		//Send Latest Chat Logs
 		io.sockets.emit('receiveChat', rooms[user.roomId].chatLog);
 
-		//Send Latest Question
-		updateQuestionsInRoom(roomId);
+		//Send Latest Questions
+		io.sockets.emit('receiveQuestions', rooms[user.roomId].questions);
+
+		//Send Latest Drawing
+		socket.emit('draw', rooms[user.roomId].drawing);
 	});
 
 
@@ -164,147 +170,103 @@ io.sockets.on('connection', function (socket) {
 	});
 
 
+	/* Questions */
 
+	function inArray(arr, elem){
+		return (arr.indexOf(elem) != -1);
+	}
+	function remElement(arr, elem){
+		if( inArray(arr, elem) ){
+			var id = arr.indexOf(elem);
+			arr.splice(id, 1);
+		}
+	}
+	//Ask Question
+	socket.on('askQuestion', function(post) {
+		var question = {
+			text: post.question,
+			upvotes: [],
+			downvotes: []
+		}
+		rooms[user.roomId].questions.push(question);
 
-
-
-
-
-
-
-
-
-
-
-	// user just asked a question from within a room
-	socket.on('ask', function(newQuestion) {
-		socket.get('roomid', function(err, askerRoomId) { // check the asker's socket for his room ID
-			if (err) throw err;
-		
-			console.log("Received a new question");
-			newQuestion.votes = 0;
-			newQuestion.qid = qid++;
-			newQuestion.roomId = askerRoomId;
-
-			if (questions[askerRoomId] == undefined) questions[askerRoomId] = new Array();
-
-			// add the new question to the list of questions in the asker's room
-			questions[askerRoomId][newQuestion.qid] = newQuestion;
-
-			updateQuestionsInRoom(askerRoomId);
-		});
+		//Send Latest Questions
+		io.sockets.emit('receiveQuestions', rooms[user.roomId].questions);
 	});
 
-	// user just downvoted a question in a room
-	socket.on('downvote', function(qid){
-		console.log("Received a downvote for question id " + qid);
-		// the following socket.get() block is the downvote toggle logic
-		socket.get('vote', function(err, vote) {
-			if (vote == null) { // if the user hasn't voted yet,
-				socket.get('roomid', // reduce the question's votecount by 1
-					function(err, roomid) {
-						if (err) throw err;
-						questions[roomid][qid].votes = questions[roomid][qid].votes-1;
-						updateQuestionsInRoom(roomid);
-					}
-					);
-				socket.set('vote', -1); // set socket state so we know that the user has upvoted this question
-			} else if (vote == 1) { // if the user already upvoted this question,
-				socket.get('roomid', // remove the upvote and perform a downvote
-					function(err, roomid) { // (i.e. subtract votecount by 2)
-						if (err) throw err;
-						questions[roomid][qid].votes = questions[roomid][qid].votes-2;
-						updateQuestionsInRoom(roomid);
-					}
-					);				
-				socket.set('vote', -1); // set socket state so we know that the user has downvoted this question
-			} else if (vote == -1) { // if the user has already downvoted this question,
-				socket.get('roomid', // remove the downvote (increase votecount by 1)
-					function(err, roomid) {
-						if (err) throw err;
-						questions[roomid][qid].votes = questions[roomid][qid].votes+1;
-						updateQuestionsInRoom(roomid);
-					}
-					);
-				socket.set('vote', null); // set socket state so we know that the user hasn't voted up or down on this question
-			}
-		});
+	//Downvote Question
+	socket.on('downVote', function(qid){
+
+		//If in upvotes, remove
+		var upvotes = rooms[user.roomId].questions[qid].upvotes;
+		remElement(upvotes, user.Id);
+
+		//Toggle Downvotes
+		var downvotes = rooms[user.roomId].questions[qid].downvotes;
+		if( inArray(downvotes, user.Id) ){
+			var id = downvotes.indexOf(user.Id);
+			downvotes.splice(id, 1);
+		}else
+			downvotes.push(user.Id);
+
+		//Send Latest Questions
+		io.sockets.emit('receiveQuestions', rooms[user.roomId].questions);
 	});
 
-	socket.on('upvote', function(qid){
-		console.log("Received an upvote for question id " + qid);
-		socket.get('vote', function(err, vote) {
-			if (vote == null) {
-				socket.get('roomid', 
-					function(err, roomid) {
-						if (err) throw err;
-						questions[roomid][qid].votes += 1;
-						updateQuestionsInRoom(roomid);
-					}
-					);
-				socket.set('vote', 1);
-			} else if (vote == 1) {
-				socket.get('roomid', 
-					function(err, roomid) {
-						if (err) throw err;
-						questions[roomid][qid].votes = questions[roomid][qid].votes-1;
-						updateQuestionsInRoom(roomid);
-					}
-					);
-				socket.set('vote', null);
-			} else if (vote == -1) {
-				socket.get('roomid', 
-					function(err, roomid) {
-						if (err) throw err;
-						questions[roomid][qid].votes += 2;
-						updateQuestionsInRoom(roomid);
-					}
-					);
-				socket.set('vote', 1);
-			}
-		});
+	//Upvote Question
+	socket.on('upVote', function(qid){
+
+		//If in downvotes, remove
+		var downvotes = rooms[user.roomId].questions[qid].downvotes;
+		remElement(downvotes, user.Id);
+
+		//Toggle Downvotes
+		var upvotes = rooms[user.roomId].questions[qid].upvotes;
+		if( inArray(upvotes, user.Id) ){
+			var id = upvotes.indexOf(user.Id);
+			upvotes.splice(id, 1);
+		}else
+			upvotes.push(user.Id);
+
+		//Send Latest Questions
+		io.sockets.emit('receiveQuestions', rooms[user.roomId].questions);
 	});
 
-	socket.on('remove', function(qid) {
-		console.log("Received request to remove question id " + qid);
-		socket.get('admin', function(err, adminFlag) {
-			if (err) throw err;
-			if (adminFlag == true) {
-				socket.get('roomid', function(err, roomid) {
-					delete questions[roomid][qid];
 
-					updateQuestionsInRoom(roomid);
-				});
-			} else {
-				console.log("Received unauthorized request to remove a question.");
-			}
-		});
+	//Remove Question
+	socket.on('removeQuestion', function(qid) {
+		console.log(qid);
+		if( user.Id == user.roomAdmin ){
+			delete rooms[user.roomId].questions[qid];
+		}
+
+		//Send Latest Questions
+		io.sockets.emit('receiveQuestions', rooms[user.roomId].questions);
+	});
+
+
+
+	/* Drawing */
+	socket.on('drawClick', function(data) {
+		var data = {
+			x: data.x,
+			y: data.y,
+			type: data.type,
+			color: data.color,
+			stroke: data.stroke
+		};
+
+		if (data.color == "#fff") {
+			rooms[user.roomId].drawing = [];
+		}
+
+		rooms[user.roomId].drawing.push(data);
+
+		//limit broadcast to users in room
+		socket.broadcast.emit('draw', [data]);
 	});
 
 });
-
-
-
-
-function updateQuestionsInRoom(roomid) {
-	console.log("questions is...");
-	console.log(questions);
-	io.sockets.clients().forEach(function(client) {
-		client.get('roomid', function(err1, clientRoomId) {
-			if (err1) throw err1;
-			if (clientRoomId == roomid) {
-				var data = {};
-				data.questions = questions[roomid];
-				client.get('admin', function(err, adminFlag) {
-					if (err) throw err;
-					if (adminFlag === true) data.admin = true;
-					else data.admin = false;
-				});
-				client.emit('update', data);
-			}
-		});
-	});
-}
 
 
 

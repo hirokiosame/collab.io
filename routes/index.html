@@ -119,6 +119,8 @@ Draw.init = function() {
 var collabio = {
 	socket: io.connect('http://'+document.domain),
 	PeerConnection: window.PeerConnection || window.webkitPeerConnection00 || window.webkitRTCPeerConnection,
+	adminId: '',
+	userId: '',
 	roomID: function(){
 		var url = document.URL.split('/');
 		if( url[4] ) 
@@ -145,6 +147,7 @@ var collabio = {
 	}
 }
 $(document).ready(function(){
+
 	//Inquire Room
 	//If Room, Join
 	if( collabio.roomID() ){
@@ -172,7 +175,9 @@ $(document).ready(function(){
 
 	//Get Room if Avaialable
 	collabio.socket.on('roomAvailable', function(data){
-		history.pushState(null, "", "/r/"+data);
+		history.pushState(null, "", "/r/"+data.roomId);
+		collabio.adminId = data.roomAdmin;
+		collabio.userId = data.Id;
 		$('div.modal.getRoom').modal('hide');
 	});
 
@@ -198,74 +203,128 @@ $(document).ready(function(){
 
 
 	/* Questions */
+
+	//Ask Question
 	$(".questions form").submit(function(e){
 		e.preventDefault();
 		collabio.socket.emit('askQuestion', $(this).serializeObject());
+		$(this)[0].reset();
 	});
 
 
-	$(document).on('click', '.upvotebutton', function(e) {
-		upvote($(this).attr('qid'));
-	});
-
-	$(document).on('click', '.downvotebutton', function(e) {
-		downvote($(this).attr('qid'));
-	});
-
-	$(document).on('click', '.removebutton', function(e) {
-		requestRemove($(this).attr('qid'));
-	});	
-
-
-	// update page in response to data push from server
-	collabio.socket.on('update', function(data){
-		adminFlag = data.admin;
+	//Receive Questions
+	collabio.socket.on('receiveQuestions', function(data){
 		console.log(data);
-		cleanData = new Array();
-		data.questions.forEach(function(elem) {
-			if (elem !== undefined && elem !== null) cleanData.push(elem);
+		//if(data == null){
+		//	$('ul.questions').html('');
+		//	return;
+		//}
+		//Calculate Votes
+		data.forEach(function(e, i){
+			if( e != null ){
+				e.id = i;
+				e.votes = e.upvotes.length - e.downvotes.length;
+			}
 		});
 
-		cleanData.sort(function(a, b) {
-			var aID = a.votes;
-			var bID = b.votes;
-			return (aID == bID) ? 0 : (aID > bID) ? -1 : 1;
-		});
-		$('#questions').html('');
-		var newHTML = '';
-		$.each(cleanData, function(i, val) {
-			newHTML += '<li class="question">'+ val.question +' ('+val.votes+' votes) <div class="buttons"> <a href="#" class="upvotebutton" qid="'+val.qid+'">&#9650;</a><a href="#" class="downvotebutton" qid="'+val.qid+'">&#9660;</a>';
-			if (adminFlag === true) newHTML += '<a href="#" class="removebutton" qid="'+val.qid+'">&#x00d7;</a>';
-			newHTML += '</div></li>';
+		//Sort by Votes
+		data.sort(function(a, b) {
+			if( a!=null && b!=null){
+				var aID = a.votes;
+				var bID = b.votes;
+				return (aID == bID) ? 0 : (aID > bID) ? -1 : 1;
+			}
 		});
 
-		$('#questions').html(newHTML);
+		$('ul.questions').html('');
+		data.forEach(function(e, i){
+			if( e != null ){
+				var html = '<li qid="'+e.id+'"><div><a class="up">&#9650;</a> ' + e.votes + ' <a class="down">&#9660;</a></div>'+ e.text;
+				if( collabio.userId == collabio.adminId ){
+					html += ' <a class="remove">&#x00d7;</a>';
+				}
+				html += '</li>';
+				$('ul.questions').append(html);
+			}
+		});
+
+		//Bind Events
+		$("li a.up").click(function(){
+			collabio.socket.emit('upVote', $(this).parents().eq(1).attr("qid"));
+		});
+		$("li a.down").click(function(){
+			collabio.socket.emit('downVote', $(this).parents().eq(1).attr("qid"));
+		});
+		$("li a.remove").click(function(){
+			collabio.socket.emit('removeQuestion', $(this).parent().attr("qid"));
+		});
 	});
 
 
 
-	// question UI handlers
-	function requestRemove(qid) {
-		if (confirm("Remove this question?"))
-			collabio.socket.emit('remove', qid);
-	}
-
-	function upvote(qid) {
-		collabio.socket.emit('upvote', qid);
-	}
-
-	function downvote(qid) {
-		collabio.socket.emit('downvote', qid);
-	}
 
 
+	/* Drawing */
+	Draw.init();
+	$(window).on('resize',function() {
+		 Draw.canvas.offset = $(Draw.canvas).offset();
+	});
+
+	$('canvas').on('drag dragstart dragend', function(e) {
+		var offset, type, x, y;
+		type = e.handleObj.type;
+		offset = $(this).offset();
+	 
+		e.offsetX = e.clientX - Draw.canvas.offset.left + window.scrollX;
+		e.offsetY = e.clientY - Draw.canvas.offset.top + window.scrollY;
+		x = e.offsetX;
+		y = e.offsetY;
+		Draw.draw(x, y, type,Draw.ctx.strokeStyle,Draw.ctx.lineWidth);
+		Draw.socket.emit('drawClick', {
+			x: x,
+			y: y,
+			type: type,
+			color: Draw.ctx.strokeStyle
+		});
+	});
 
 
+	$('#clear').on('click',function(){
+		console.log("clear")
+		Draw.draw(0, 0, "dragstart","#fff",10000);
+		Draw.draw(400, 800, "drag","#fff",10000);
+		Draw.draw(400, 800, "dragend","#fff",10000);
+	 
+		Draw.socket.emit('drawClick', {
+			x: 0,
+			y: 0,
+			type: "dragstart",
+			color: "#fff",
+			stroke:10000
+		});
+		Draw.socket.emit('drawClick', {
+			x: 400,
+			y: 800,
+			type: "drag",
+			color: "#fff",
+			stroke:10000
+		});
+		Draw.socket.emit('drawClick', {
+			x: 400,
+			y: 800,
+			type: "dragend",
+			color: "#123",
+			stroke:2
+		});
 
+		Draw.ctx.strokeStyle = "#123";
+		Draw.ctx.lineWidth = 2;
+	})
 
+	Draw.socket.emit('join',{});
 
 });
-
+window.Draw = Draw;
 //})();
 </script>
 <style>
@@ -313,7 +372,22 @@ div.modal.getRoom form input.name{
 }
 .chat ul.conversation span.userName{
 	font-weight:bold;
+}
 
+
+ul.questions{
+	padding: 0;
+	margin: 0;
+	height: 500px;
+	overflow: scroll;
+	list-style: none;
+}
+ul.questions li div{
+	display: inline-block;
+}
+ul.questions li a:hover{
+	cursor: pointer;
+	text-decoration: none;
 }
 </style>
 	</head>
@@ -365,7 +439,7 @@ div.modal.getRoom form input.name{
 				<div class="span4 column right">
 					<div class="questions">
 						<form>
-							<textarea id="question"></textarea>
+							<textarea name="question" placeholder="Any questions?"></textarea>
 							<input type="submit" class="btn btn-primary" value="Ask">
 						</form>
 						<ul class="questions"></ul>
