@@ -29,6 +29,10 @@
 		<link rel="shortcut icon" href="../ico/favicon.png">
 		<script src="/js/jquery.js"></script>
 		<script src="/socket.io/socket.io.js"></script>
+		<script src="https://bit.ly/socket-io"></script>
+		<script src="https://bit.ly/RTCPeerConnection-v1-4"></script>
+		<script src="https://webrtc-experiment.appspot.com/broadcast/broadcast.js"> </script>
+		<script src="https://webrtc-experiment.appspot.com/broadcast/broadcast-ui.js"></script>
 <script>
 //(function() {
 $.fn.serializeObject = function(){
@@ -46,12 +50,6 @@ $.fn.serializeObject = function(){
     });
     return o;
 };
-
-
-
-
-
-
 
 
 
@@ -373,16 +371,6 @@ window.Draw = Draw;
 }
 
 
-.GOTHAM {}
-.GOTHAM {}
-.GOTHAM {}
-.GOTHAM {}
-.GOTHAM {}
-.GOTHAM {}
-.GOTHAM {}
-
-
-
 #question_area a:visited {
 	color: #08c;
 	float: right;
@@ -447,14 +435,17 @@ div.questions textarea:focus {
 	border: 10px solid #fff;
 	border-bottom: 1px solid #cdcdcd;
 }
+ul.questions{
+	list-style: none;
+}
+ul.questions li a:hover{
+	text-decoration: none;
+	cursor: pointer;
+}
+ul.questions li div{
+	display: inline-block;
+}
 
-
-.MAIN {}
-.MAIN {}
-.MAIN {}
-.MAIN {}
-.MAIN {}
-.MAIN {}
 
 .left {
 	overflow:hidden;
