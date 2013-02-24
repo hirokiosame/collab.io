@@ -30,7 +30,7 @@
 		<script src="/js/jquery.js"></script>
 		<script src="/socket.io/socket.io.js"></script>
 <script>
-(function() {
+//(function() {
 $.fn.serializeObject = function(){
     var o = {};
     var a = this.serializeArray();
@@ -107,15 +107,26 @@ $(document).ready(function(){
 		$('div.modal.getRoom').modal('hide');
 	});
 
-
 	//Send Chat Message
 	$("div.chat form").submit(function(e){
 		e.preventDefault();
-		collabio.socket.emit('chatPost', $(this).serializeObject());
+		collabio.socket.emit('sendChat', $(this).serializeObject());
+	});
+
+	//Receive Chat Messages
+	collabio.socket.on('receiveChat', function(data){
+		$("ul.conversation").html('');
+		data.forEach(function(e){
+			var time = new Date(e.time),
+				html = '<li title="' + time.getHours() + ':' + time.getMinutes() + ':' + time.getSeconds() + '"><span class="userName">' + e.userName + '</span> ' + e.text + '</li>';
+			console.log(e);
+			$("ul.conversation").append(html);
+		});
+		$("ul.conversation").scrollTop($("ul.conversation").height());
 	});
 });
 
-})();
+//})();
 </script>
 <style>
 html, body, .container-fluid, .row-fluid{
@@ -155,8 +166,14 @@ div.modal.getRoom form input.name{
 .chat{
 	height: 40%;
 }
-.chat div.conversation{
-	background-color:#ccc;
+.chat ul.conversation{
+	background-color: #ccc;
+	overflow: scroll;
+	height: 220px;
+}
+.chat ul.conversation span.userName{
+	font-weight:bold;
+
 }
 </style>
 	</head>
@@ -196,12 +213,11 @@ div.modal.getRoom form input.name{
 				<div class="span8 column left">
 					<canvas class="draw"></canvas>
 					<div class="chat">
-						<div class="conversation">
-							sdfsdfsd
-						</div>
+						<ul class="conversation">
+						</ul>
 						<div>
 							<form>
-								<input type="text" name="chatText">
+								<input type="text" name="text">
 							</form>
 						</div>
 					</div>

@@ -35,17 +35,18 @@ function createRoom(roomId, adminId, adminName){
 	var Room = {
 		name: '',
 		users: {},
+		chatLog: []
 	};
 	Room.users[adminId] = adminName;
 
 	rooms[roomId] = Room;
-	console.log("Room Created with ID "+roomId+":");
-	console.log(Room);
+	console.log("USER EVENT: Room Created with ID '"+roomId+"'' by '" + adminId + "'' who joined as '" + adminName + "'");
+	//console.log(Room);
 }
 
 function joinUser(roomId, userId, userName){
 	rooms[roomId].users[userId] = userName;
-	console.log(rooms);
+	console.log("USER EVENT: '" + userId + "'' has joined room '" + roomId + "'' as '" + userName + "'");
 }
 
 
@@ -83,15 +84,24 @@ app.post('/r/:id', function(req, res){
 var	server = http.createServer(app).listen(app.get('port'), function(){
 		console.log("Express server listening on port " + app.get('port'));
 	}),
-	io = require('socket.io').listen(server, { log: false });
+	io = require('socket.io').listen(server, { log: false }),
+	webRTC = require('webrtc.io').listen(server);
 
 
 
 io.sockets.on('connection', function (socket) {
+	var user = {
+		Id: Math.random().toString(36).substr(2, 8),
+		Name: undefined,
+		roomId: undefined
+	};
 
-	var userId = Math.random().toString(36).substr(2, 8);
-	socket.set('userId', userId);
-	console.log("New User: " + userId);
+	console.log("New User: " + user.Id);
+
+	//Print Userdata
+	socket.on('printData', function(post){
+		console.log(user);
+	});
 
 	//Create Room
 	socket.on('createRoom', function(post){
@@ -100,43 +110,50 @@ io.sockets.on('connection', function (socket) {
 		var roomId = Math.random().toString(36).substr(2, 8);
 
 		//Set Username in socket
-		socket.set('userName', post.name);
+		user.Name = post.name;
 
 		//Get User ID to create new Room
-		socket.get('userId', function(err, userId) {
-			if (err) throw err;
-			createRoom(roomId, userId, post.name);
+		createRoom(roomId, user.Id, user.Name);
+		user.roomId = roomId;
 
-			//Send Back Successful Creation of Room
-			socket.emit('roomAvailable', roomId);
-		});
+		//Send Back Successful Creation of Room
+		socket.emit('roomAvailable', roomId);
+
 	});
 
 	//Join Room
 	socket.on('joinRoom', function(post){
+
 		//Get the Room requested
 		var roomUrl = socket.handshake.headers.referer,
-			roomId = roomUrl.split('/');
+			roomId = roomUrl.split('/').pop();
 
 		//Set Username in socket
-		socket.set('userName', post.name);
+		user.Name = post.name;
 
 		//Get User ID to join Room
-		socket.get('userId', function(err, userId) {
-			if (err) throw err;
-			joinUser(roomId[4], userId, post.name);
+		joinUser(roomId, user.Id, user.Name);
+		user.roomId = roomId;
 
-			//Send Back Successful Joining of Room
-			socket.emit('roomAvailable', roomId[4]);
-		});
+		//Send Back Successful Joining of Room
+		socket.emit('roomAvailable', roomId);
+
+		//Send Latest Chat Logs
+		io.sockets.emit('receiveChat', rooms[user.roomId].chatLog);
 	});
 
 
-	socket.on('chatPost', function (post) {
-		console.log(post);
-		//var new_post = formatPost(post);
-		//chat_feed += new_post;
-		//io.sockets.emit('chat_receive', new_post);
+	//Send Chat Message
+	socket.on('sendChat', function (message) {
+		var log = {
+			userId: user.Id,
+			userName: user.Name,
+			time: (new Date()).getTime(),
+			text: message.text
+		};
+		rooms[user.roomId].chatLog.push(log);
+
+		io.sockets.emit('receiveChat', rooms[user.roomId].chatLog);
 	});
 
 });
