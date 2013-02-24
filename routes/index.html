@@ -103,10 +103,16 @@ Draw.init = function() {
 	Draw.ctx.lineCap = "round";
 	Draw.socket = collabio.socket;
 	Draw.socket.on('draw', function(data) {
-		for (var i = 0, limit = data.length; i < limit; i ++) {
-			Draw.draw(data[i].x, data[i].y, data[i].type,data[i].color,data[i].stroke);
+		console.log(data);
+		if (Draw.allowOthers) {
+			for (var i = 0, limit = data.length; i < limit; i ++) {
+				Draw.draw(data[i].x, data[i].y, data[i].type,data[i].color,data[i].stroke);
+			}
+		} else {
+			for (var i = 0, limit = data.length; i < limit; i ++) {
+				Draw.record.push(data[i])
+			} 
 		}
-		
 	});
 
 	Draw.draw = function(x, y, type, color, stroke) {
@@ -268,76 +274,83 @@ $(document).ready(function(){
 
 
 	/* Drawing */
-		Draw.init();
-		Draw.chunk = [];
-		$(window).on('resize',function() {
-			 Draw.canvas.offset = $(Draw.canvas).offset();
-		});
+	Draw.init();
+	Draw.chunk = [];
+	Draw.record = [];
+	Draw.allowOthers = true;
+	$(window).on('resize',function() {
+		 Draw.canvas.offset = $(Draw.canvas).offset();
+	});
 
-		$('canvas').on('drag dragstart dragend', function(e) {
+	$('canvas').on('drag dragstart dragend', function(e) {
 
-			var offset, type, x, y;
-			type = e.handleObj.type;
-			offset = $(this).offset();
-			
-			if (e.type =='dragstart') {
-				 Draw.chunk = [];
-			}
-		 
-			e.offsetX = e.clientX - Draw.canvas.offset.left + window.scrollX;
-			e.offsetY = e.clientY - Draw.canvas.offset.top + window.scrollY;
-			x = e.offsetX;
-			y = e.offsetY;
-			Draw.draw(x, y, type,Draw.ctx.strokeStyle,Draw.ctx.lineWidth);
-			var emitData = {
-				x: x,
-				y: y,
-				type: type,
-				color: Draw.ctx.strokeStyle
-			};
+		var offset, type, x, y;
+		type = e.handleObj.type;
+		offset = $(this).offset();
+		
+		if (e.type =='dragstart') {
+			 Draw.chunk = [];
+			 Draw.allowOthers = false;
 
-			Draw.chunk.push(emitData);
-			if (e.type =='dragend') {
-				console.log('send')
-				console.log(Draw.chunk)
-				 Draw.socket.emit('drawClick', Draw.chunk);
-			}
-		});
+		}
+	 
+		e.offsetX = e.clientX - Draw.canvas.offset.left + window.scrollX;
+		e.offsetY = e.clientY - Draw.canvas.offset.top + window.scrollY;
+		x = e.offsetX;
+		y = e.offsetY;
+		Draw.draw(x, y, type,Draw.ctx.strokeStyle,Draw.ctx.lineWidth);
+		var emitData = {
+			x: x,
+			y: y,
+			type: type,
+			color: Draw.ctx.strokeStyle
+		};
+
+		Draw.chunk.push(emitData);
+		if (e.type =='dragend') {
+			console.log('send')
+			console.log(Draw.chunk)
+			Draw.socket.emit('drawClick', Draw.chunk);
+			Draw.allowOthers = true;
+			for (var i = 0, limit = Draw.record.length; i < limit; i ++) {
+			Draw.draw(Draw.record[i].x, Draw.record[i].y, Draw.record[i].type,Draw.record[i].color,Draw.record[i].stroke);
+	}
+	Draw.record = [];
+		}
+	});
 
 
-		$('#clear').on('click',function(){
-			console.log("clear");
-			Draw.draw(0, 0, "dragstart","#fff",10000);
-			Draw.draw(400, 800, "drag","#fff",10000);
-			Draw.draw(400, 800, "dragend","#fff",10000);
-		 
-			var clear = [{
-				x: 0,
-				y: 0,
-				type: "dragstart",
-				color: "#fff",
-				stroke:10000
-			},{
-				x: 400,
-				y: 800,
-				type: "drag",
-				color: "#fff",
-				stroke:10000
-			},{
-				x: 400,
-				y: 800,
-				type: "dragend",
-				color: "#123",
-				stroke:2
-			}];
-			Draw.socket.emit('drawClick',clear);
-			
-			Draw.ctx.strokeStyle = "#123";
-			Draw.ctx.lineWidth = 2;
-		})
+	$('#clear').on('click',function(){
+		console.log("clear");
+		Draw.draw(0, 0, "dragstart","#fff",10000);
+		Draw.draw(400, 800, "drag","#fff",10000);
+		Draw.draw(400, 800, "dragend","#fff",10000);
+	 
+		var clear = [{
+			x: 0,
+			y: 0,
+			type: "dragstart",
+			color: "#fff",
+			stroke:10000
+		},{
+			x: 400,
+			y: 800,
+			type: "drag",
+			color: "#fff",
+			stroke:10000
+		},{
+			x: 400,
+			y: 800,
+			type: "dragend",
+			color: "#123",
+			stroke:2
+		}];
+		Draw.socket.emit('drawClick',clear);
+		Draw.ctx.strokeStyle = "#123";
+		Draw.ctx.lineWidth = 2;
+	})
 
-		Draw.socket.emit('join',{});
-
+	Draw.socket.emit('join',{});
 
 });
 window.Draw = Draw;
@@ -382,7 +395,7 @@ window.Draw = Draw;
 }
 #draw .header span:hover {
 	cursor:pointer;
-	border: 2px solid #222;
+	background-color: #eee;
 }
 
 
@@ -436,7 +449,7 @@ div.questions textarea:focus {
 	font-weight: 200;
 }
 #submitquestion:hover {
-	border: 2px solid #222;
+	background-color: #eee;
 	float: left;
 	cursor:pointer;
 
