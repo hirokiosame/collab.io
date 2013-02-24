@@ -287,13 +287,13 @@ $(document).ready(function(){
 		var offset, type, x, y;
 		type = e.handleObj.type;
 		offset = $(this).offset();
-		
+
 		if (e.type =='dragstart') {
 			 Draw.chunk = [];
 			 Draw.allowOthers = false;
 
 		}
-	 
+
 		e.offsetX = e.clientX - Draw.canvas.offset.left + window.scrollX;
 		e.offsetY = e.clientY - Draw.canvas.offset.top + window.scrollY;
 		x = e.offsetX;
@@ -325,7 +325,7 @@ $(document).ready(function(){
 		Draw.draw(0, 0, "dragstart","#fff",10000);
 		Draw.draw(400, 800, "drag","#fff",10000);
 		Draw.draw(400, 800, "dragend","#fff",10000);
-	 
+
 		var clear = [{
 			x: 0,
 			y: 0,
@@ -361,7 +361,7 @@ window.Draw = Draw;
 	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 	font-weight: 200;
 }
-	
+
 #draw {
 	background: #fff;
 	position: relative;
@@ -382,7 +382,7 @@ window.Draw = Draw;
 
 #draw .header span {
 	cursor:pointer;
-	
+
 }
 
 #draw .header span {
@@ -613,6 +613,28 @@ div.modal.getRoom form input.name{
 	min-height: 400px;
 }
 
+body,html {
+	min-width:1280px !important;
+	width:1280px !important;
+}
+
+.span4.column.right {
+	margin-left: 0;
+	width: 435px !important;
+	
+}
+
+.navbar.navbar-fixed-top,.navbar-inner.RomanBar{
+	height:50px !important;
+	margin-bottom: 0px !important;
+
+}
+.navbar.navbar-fixed-top {
+	position: fixed;
+}
+
+
+
 </style>
 	</head>
 
@@ -634,7 +656,7 @@ div.modal.getRoom form input.name{
 						<span class="icon-bar"></span>
 						<span class="icon-bar"></span>
 					</button>
-				
+
 					<div class="nav-collapse collapse">
 						<ul class="nav">
 							<li><a href="../">collab.io</a></li>

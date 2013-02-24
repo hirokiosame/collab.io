@@ -312,7 +312,9 @@ io.sockets.on('connection', function (socket) {
 		var sys = require('sys')
 		var exec = require('child_process').exec;
 		function puts(error, stdout, stderr) { sys.puts(stdout) }
-		exec("python '"+require('path').dirname(require.main.filename)+"/evernote/EDAMTest.py' '"+require('path').dirname(require.main.filename)+"/images/"+user.roomId+".png' 'a' 'b'", puts);
+
+		console.log(rooms[user.roomId].questions[data.qid].text);
+		exec("python '"+require('path').dirname(require.main.filename)+"/evernote/EDAMTest.py' '"+require('path').dirname(require.main.filename)+"/images/"+user.roomId+".png' '"+rooms[user.roomId].questions[data.qid].text+"' '"+rooms[user.roomId].questions[data.qid].text+"'", puts);
 	});
 });
 
