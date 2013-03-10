@@ -30,15 +30,6 @@ io.sockets.manager.roomDrawing = {};
 
 
 io.sockets.on('connection', function (socket) {
-	//Set to Socket Session
-	//console.log(io.sockets);
-	//console.log("---------------");
-	//console.log(socket);
-
-	//was already in chat
-	//if(socket.username)
-	//emit available
-
 	//Set Socket User
 	console.log("New User: " + socket.id);
 
@@ -68,11 +59,6 @@ io.sockets.on('connection', function (socket) {
 			clients: socket.manager.rooms['/'+roomId]
 		};
 		socket.emit('roomAvailable', send);
-		//console.log(io.sockets);
-		//console.log("---------------");
-		//console.log(socket);
-		//console.log(socket.manager.rooms);
-		//console.log(socket.manager.rooms['/'+roomId]);
 	});
 
 	//Join Room
@@ -214,6 +200,7 @@ io.sockets.on('connection', function (socket) {
 	socket.on('drawClick', function(data) {
 		var roomDrawing = io.sockets.manager.roomDrawing;
 
+		/* Not sure what purpose this serves */
 		//if (data[0].color == "#fff") {
 		//	roomDrawing = [];
 		//}
@@ -244,13 +231,6 @@ io.sockets.on('connection', function (socket) {
 		exec("python '"+require('path').dirname(require.main.filename)+"/evernote/EDAMTest.py' '"+require('path').dirname(require.main.filename)+"/images/"+user.roomId+".png' '"+rooms[user.roomId].questions[data.qid].text+"' '"+rooms[user.roomId].questions[data.qid].text+"'", puts);
 	});
 
-	function GetroomId(){
-		var rooms = socket.manager.rooms;
-		for(var channel in rooms) {
-			if( channel !="" && socket.manager.roomClients[socket.id][channel] )
-				return channel
-		}
-	}
 
 	socket.on('disconnect', function(){
 		if( socket.roomId == undefined ) return;
