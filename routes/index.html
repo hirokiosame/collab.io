@@ -29,10 +29,6 @@
 		<link rel="shortcut icon" href="../ico/favicon.png">
 		<script src="/js/jquery.js"></script>
 		<script src="/socket.io/socket.io.js"></script>
-		<script src="https://bit.ly/socket-io"></script>
-		<script src="https://bit.ly/RTCPeerConnection-v1-4"></script>
-		<script src="https://webrtc-experiment.appspot.com/broadcast/broadcast.js"> </script>
-		<script src="https://webrtc-experiment.appspot.com/broadcast/broadcast-ui.js"></script>
 <script>
 //(function() {
 $.fn.serializeObject = function(){
@@ -54,7 +50,7 @@ $.fn.serializeObject = function(){
 
 
 var collabio = {
-	socket: io.connect('http://'+document.domain),
+	socket: io.connect(),
 	PeerConnection: window.PeerConnection || window.webkitPeerConnection00 || window.webkitRTCPeerConnection,
 	adminId: '',
 	userId: '',
@@ -83,6 +79,7 @@ var collabio = {
 		}
 	}
 };
+
 //Draw
 var Draw = {};
 Draw.init = function() {
@@ -149,6 +146,12 @@ Draw.init = function() {
 
 
 
+
+
+
+
+
+
 $(document).ready(function(){
 
 	//Inquire Room
@@ -162,6 +165,7 @@ $(document).ready(function(){
 	$('div.modal.getRoom').on('shown', function () {
 		$("input.name").focus();
 	}).modal({
+		backdrop: "static",
 		show: true,
 		keyboard: false
 	});
@@ -690,11 +694,10 @@ body,html {
 						</form>
 						<ul class="questions"></ul>
 					</div>
-					<video class="video"></video>
 				</div>
 			</div>
 		</div>
-		<script src="../js/bootstrap-modal.js"></script>
+		<script src="/js/bootstrap-modal.js"></script>
 		<script src="/js/jquery.event.drag-2.2.js"></script>
 
 	</body>

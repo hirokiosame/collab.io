@@ -1,26 +1,14 @@
-
-/**
- * Module dependencies.
- */
-
 var express = require('express'),
-	routes = require('./routes'),
-	user = require('./routes/user'),
 	http = require('http'),
 	path = require('path'),
 	app = express(),
 	fs = require('fs');
 
 app.configure(function(){
-  app.set('port', process.env.PORT || 80);
-  app.set('views', __dirname + '/views');
-  app.set('view engine', 'jade');
-  app.use(express.favicon());
+  app.set('port', process.env.PORT || 8081);
   app.use(express.logger('dev'));
   app.use(express.bodyParser());
   app.use(express.methodOverride());
-  app.use(express.cookieParser('your secret here'));
-  app.use(express.session());
   app.use(app.router);
   app.use(express.static(path.join(__dirname, 'public')));
 });
@@ -29,118 +17,62 @@ app.configure('development', function(){
   app.use(express.errorHandler());
 });
 
-var rooms = {}
-
-function createRoom(roomId, adminId, adminName){
-
-	var Room = {
-		id: roomId,
-		name: '',
-		adminId: adminId,
-		users: {},
-		chatLog: [],
-		questions: [],
-		drawing: []
-	};
-	Room.users[adminId] = adminName;
-
-	rooms[roomId] = Room;
-	console.log("USER EVENT: Room Created with ID '"+roomId+"'' by '" + adminId + "'' who joined as '" + adminName + "'");
-}
-
-function joinUser(roomId, userId, userName){
-	rooms[roomId].users[userId] = userName;
-	console.log("USER EVENT: '" + userId + "'' has joined room '" + roomId + "'' as '" + userName + "'");
-}
-
-
-//Create Room
-app.get('/', function(req, res){
-	res.sendfile('./routes/index.html');
-});
-
-//webrtc
-app.get('/rtc', function(req, res){
-	res.sendfile('./routes/webrtc.html');
-});
-
-
-//Join Room
-app.get('/r/:id', function(req, res){
-	var roomId = req.params.id;
-	console.log("Request to join room: "+roomId);
-
-	if( !rooms[roomId] ){
-		console.log("Room "+roomId+" doesnt exist!");
-		res.redirect('/');
-	}else{
-		//Show Page
-		res.sendfile('./routes/index.html');
-	}
-});
-
-
-//Enter Name with ajax
-app.post('/r/:id', function(req, res){
-	var roomId = req.params.id;
-	if( rooms[roomId] ){
-		var	userName = req.body.name;
-		joinUser(roomId, req.session.userID, userName);
-		res.send(roomId);
-	}
-});
-
-
-//iPhone Canvas
-app.get('/r/:id/:user', function(req, res){
-	//Verify that the ids and the user exists
-	res.sendfile('./routes/index.html');
-});
-
 
 var	server = http.createServer(app).listen(app.get('port'), function(){
 		console.log("Express server listening on port " + app.get('port'));
 	}),
 	io = require('socket.io').listen(server, { log: false });
 
+//Prepare Room Logs
+io.sockets.manager.roomChat = {};
+io.sockets.manager.roomQuestions = {};
+io.sockets.manager.roomDrawing = {};
+
 
 io.sockets.on('connection', function (socket) {
-	var user = {
-		Id: Math.random().toString(36).substr(2, 8),
-		Name: undefined,
-		roomId: undefined,
-		roomAdmin: undefined
-	};
+	//Set to Socket Session
+	//console.log(io.sockets);
+	//console.log("---------------");
+	//console.log(socket);
+
+	//was already in chat
+	//if(socket.username)
+	//emit available
 
 	//Set Socket User
-	socket.set('userId', user.Id);
-	console.log("New User: " + user.Id);
-
-	//Print Userdata
-	socket.on('printData', function(post){
-		console.log(user);
-	});
+	console.log("New User: " + socket.id);
 
 	//Create Room
 	socket.on('createRoom', function(post){
-
 		//Generate Hash for Room
 		var roomId = Math.random().toString(36).substr(2, 8);
 
-		//Set Username in socket
-		user.Name = post.name;
+		//Set Username in Socket
+		socket.username = post.name;
 
-		//Get User ID to create new Room
-		createRoom(roomId, user.Id, user.Name);
-		user.roomId = roomId;
-		user.roomAdmin = rooms[roomId].adminId;
+		console.log("EVENT: User["+socket.id+"] CREATED Room["+roomId+"] with username["+socket.username+"].");
 
 		//Join Socket Room
-		socket.join(user.roomId);
+		socket.join(roomId);
+		socket.roomId = roomId;
+
+		//Prepare Room
+		io.sockets.manager.roomChat['/'+roomId] = [];
+		io.sockets.manager.roomQuestions['/'+roomId] = [];
+		io.sockets.manager.roomDrawing['/'+roomId] = [];
 
 		//Send Back Successful Creation of Room
-		socket.emit('roomAvailable', user);
-
+		var send = {
+			roomId: roomId,
+			userId: socket.id,
+			clients: socket.manager.rooms['/'+roomId]
+		};
+		socket.emit('roomAvailable', send);
+		//console.log(io.sockets);
+		//console.log("---------------");
+		//console.log(socket);
+		//console.log(socket.manager.rooms);
+		//console.log(socket.manager.rooms['/'+roomId]);
 	});
 
 	//Join Room
@@ -151,42 +83,47 @@ io.sockets.on('connection', function (socket) {
 			roomId = roomUrl.split('/').pop();
 
 		//Set Username in socket
-		user.Name = post.name;
+		socket.username = post.name;
 
-		//Get User ID to join Room
-		joinUser(roomId, user.Id, user.Name);
-		user.roomId = roomId;
-		user.roomAdmin = rooms[roomId].adminId;
+		console.log("EVENT: User["+socket.id+"] JOINED Room["+roomId+"] with username["+socket.username+"].");
 
 		//Join Socket Room
-		socket.join(user.roomId);
+		socket.join(roomId);
+		socket.roomId = roomId;
 
 		//Send Back Successful Joining of Room
-		socket.emit('roomAvailable', user);
+		var send = {
+			roomId: roomId,
+			userId: socket.id,
+			clients: socket.manager.rooms['/'+roomId]
+		};
+		socket.emit('roomAvailable', send);
 
 		//Send Latest Chat Logs
-		socket.emit('receiveChat', rooms[user.roomId].chatLog);
+		socket.emit('receiveChat', io.sockets.manager.roomChat['/'+roomId]);
 
 		//Send Latest Questions
-		socket.emit('receiveQuestions', rooms[user.roomId].questions);
+		socket.emit('receiveQuestions', io.sockets.manager.roomQuestions['/'+roomId]);
 
 		//Send Latest Drawing
-		socket.emit('draw', rooms[user.roomId].drawing);
+		socket.emit('draw', io.sockets.manager.roomDrawing['/'+roomId]);
 	});
+
 
 
 	//Send Chat Message
 	socket.on('sendChat', function (message) {
+		var roomChat = io.sockets.manager.roomChat['/'+socket.roomId];
 		var log = {
-			userId: user.Id,
-			userName: user.Name,
+			userId: socket.id,
+			userName: socket.username,
 			time: (new Date()).getTime(),
 			text: message.text
 		};
-		rooms[user.roomId].chatLog.push(log);
+		roomChat.push(log);
 
 		//Send Latest Chat Logs
-		io.sockets.in(user.roomId).emit('receiveChat', rooms[user.roomId].chatLog);
+		io.sockets.in(socket.roomId).emit('receiveChat', roomChat);
 	});
 
 
@@ -203,99 +140,89 @@ io.sockets.on('connection', function (socket) {
 	}
 	//Ask Question
 	socket.on('askQuestion', function(post) {
-		console.log(post);
+		var roomQuestions = io.sockets.manager.roomQuestions['/'+socket.roomId];
 		var question = {
 			text: post.question,
 			upvotes: [],
-			downvotes: []
+			downvotes: [],
+			askedBy: socket.id
 		}
-		rooms[user.roomId].questions.push(question);
+
+		roomQuestions.push(question);
 
 		//Send Latest Questions
-		io.sockets.in(user.roomId).emit('receiveQuestions', rooms[user.roomId].questions);
+		io.sockets.in(socket.roomId).emit('receiveQuestions', roomQuestions);
 	});
 
 	//Downvote Question
 	socket.on('downVote', function(qid){
+		var roomQuestions = io.sockets.manager.roomQuestions['/'+socket.roomId];
 
 		//If in upvotes, remove
-		var upvotes = rooms[user.roomId].questions[qid].upvotes;
-		remElement(upvotes, user.Id);
+		var upvotes = roomQuestions[qid].upvotes;
+		remElement(upvotes, socket.id);
 
 		//Toggle Downvotes
-		var downvotes = rooms[user.roomId].questions[qid].downvotes;
-		if( inArray(downvotes, user.Id) ){
-			var id = downvotes.indexOf(user.Id);
+		var downvotes = roomQuestions[qid].downvotes;
+		if( inArray(downvotes, socket.id) ){
+			var id = downvotes.indexOf(socket.id);
 			downvotes.splice(id, 1);
 		}else
-			downvotes.push(user.Id);
+			downvotes.push(socket.id);
 
 		//Send Latest Questions
-		io.sockets.in(user.roomId).emit('receiveQuestions', rooms[user.roomId].questions);
+		io.sockets.in(socket.roomId).emit('receiveQuestions', roomQuestions);
 	});
 
 	//Upvote Question
 	socket.on('upVote', function(qid){
+		var roomQuestions = io.sockets.manager.roomQuestions['/'+socket.roomId];
 
 		//If in downvotes, remove
-		var downvotes = rooms[user.roomId].questions[qid].downvotes;
-		remElement(downvotes, user.Id);
+		var downvotes = roomQuestions[qid].downvotes;
+		remElement(downvotes, socket.id);
 
 		//Toggle Downvotes
-		var upvotes = rooms[user.roomId].questions[qid].upvotes;
-		if( inArray(upvotes, user.Id) ){
-			var id = upvotes.indexOf(user.Id);
+		var upvotes = roomQuestions[qid].upvotes;
+		if( inArray(upvotes, socket.id) ){
+			var id = upvotes.indexOf(socket.id);
 			upvotes.splice(id, 1);
 		}else
-			upvotes.push(user.Id);
+			upvotes.push(socket.id);
 
 		//Send Latest Questions
-		io.sockets.in(user.roomId).emit('receiveQuestions', rooms[user.roomId].questions);
+		io.sockets.in(socket.roomId).emit('receiveQuestions', roomQuestions);
 	});
 
 
 	//Remove Question
 	socket.on('removeQuestion', function(qid) {
-		console.log(qid);
-		if( user.Id == user.roomAdmin ){
-			delete rooms[user.roomId].questions[qid];
+		var roomQuestions = io.sockets.manager.roomQuestions['/'+socket.roomId];
+		var roomAdmin = socket.manager.rooms['/'+socket.roomId][0];
+
+		if( roomAdmin == socket.id || roomQuestions[qid].askedBy == socket.id ){
+			delete roomQuestions[qid];
 		}
 
 		//Send Latest Questions
-		io.sockets.in(user.roomId).emit('receiveQuestions', rooms[user.roomId].questions);
+		io.sockets.in(socket.roomId).emit('receiveQuestions', roomQuestions);
 	});
 
 
 
 	/* Drawing */
 	socket.on('drawClick', function(data) {
-		if (data[0].color == "#fff") {
-			rooms[user.roomId].drawing = [];
-		}
-		rooms[user.roomId].drawing = rooms[user.roomId].drawing.concat(data);
-		//limit broadcast to users in room
-		io.sockets.in(user.roomId).emit('draw', data);
+		var roomDrawing = io.sockets.manager.roomDrawing;
+
+		//if (data[0].color == "#fff") {
+		//	roomDrawing = [];
+		//}
+		roomDrawing['/'+socket.roomId] = roomDrawing['/'+socket.roomId].concat(data);
+
+		//Send Latest Drawing
+		io.sockets.in(socket.roomId).emit('draw', data);
 	});
-	/*
-	socket.on('drawClick', function(data) {
-		var data = {
-			x: data.x,
-			y: data.y,
-			type: data.type,
-			color: data.color,
-			stroke: data.stroke
-		};
 
-		if (data.color == "#fff") {
-			rooms[user.roomId].drawing = [];
-		}
-
-		rooms[user.roomId].drawing.push(data);
-
-		//limit broadcast to users in room
-		io.sockets.in(user.roomId).emit('draw', [data]);
-	});
-*/
 
 	//Evernote
 	socket.on('evernoteSave', function(data) {
@@ -316,5 +243,59 @@ io.sockets.on('connection', function (socket) {
 		console.log(rooms[user.roomId].questions[data.qid].text);
 		exec("python '"+require('path').dirname(require.main.filename)+"/evernote/EDAMTest.py' '"+require('path').dirname(require.main.filename)+"/images/"+user.roomId+".png' '"+rooms[user.roomId].questions[data.qid].text+"' '"+rooms[user.roomId].questions[data.qid].text+"'", puts);
 	});
+
+	function GetroomId(){
+		var rooms = socket.manager.rooms;
+		for(var channel in rooms) {
+			if( channel !="" && socket.manager.roomClients[socket.id][channel] )
+				return channel
+		}
+	}
+
+	socket.on('disconnect', function(){
+		if( socket.roomId == undefined ) return;
+
+		console.log(socket.id+"["+socket.username+"] has left the Room["+socket.roomId+"].");
+		socket.leave(socket.roomId);
+		if( socket.manager.rooms["/"+socket.roomId] == undefined ){
+			console.log("No one in Room["+socket.roomId+"]. Deleting Logs.");
+			//Delete Room Chat
+			delete io.sockets.manager.roomChat['/'+socket.roomId];
+
+			//Delete Room Questions
+			delete io.sockets.manager.roomQuestions['/'+socket.roomId];
+
+			//Delete Room Drawing
+			delete io.sockets.manager.roomDrawing['/'+socket.roomId];
+		}
+	});
 });
+
+
+
+//Create Room
+app.get('/', function(req, res){
+	res.sendfile('./routes/index.html');
+});
+
+//iPhone Canvas
+app.get('/r/:id/:user', function(req, res){
+	//Verify that the ids and the user exists
+	res.sendfile('./routes/index.html');
+});
+
+//Join Room
+app.get('/r/:id', function(req, res){
+	var roomId = req.params.id;
+	console.log("Trying to join room: "+roomId);
+
+	if( !io.sockets.manager.rooms['/'+roomId] ){
+		console.log("Room "+roomId+" doesnt exist!");
+		res.redirect('/');
+	}else{
+		//Show Page
+		res.sendfile('./routes/index.html');
+	}
+});
+
 
