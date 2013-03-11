@@ -109,7 +109,7 @@ io.sockets.on('connection', function (socket) {
 		roomChat.push(log);
 
 		//Send Latest Chat Logs
-		io.sockets.in(socket.roomId).emit('receiveChat', roomChat);
+		io.sockets.in(socket.roomId).emit('receiveChat', [log]);
 	});
 
 
@@ -128,16 +128,18 @@ io.sockets.on('connection', function (socket) {
 	socket.on('askQuestion', function(post) {
 		var roomQuestions = io.sockets.manager.roomQuestions['/'+socket.roomId];
 		var question = {
+			id: roomQuestions.length,
 			text: post.question,
 			upvotes: [],
 			downvotes: [],
 			askedBy: socket.id
-		}
+		};
 
 		roomQuestions.push(question);
 
+
 		//Send Latest Questions
-		io.sockets.in(socket.roomId).emit('receiveQuestions', roomQuestions);
+		io.sockets.in(socket.roomId).emit('receiveQuestions', [question]);
 	});
 
 	//Downvote Question
@@ -157,7 +159,7 @@ io.sockets.on('connection', function (socket) {
 			downvotes.push(socket.id);
 
 		//Send Latest Questions
-		io.sockets.in(socket.roomId).emit('receiveQuestions', roomQuestions);
+		io.sockets.in(socket.roomId).emit('receiveQuestions', [roomQuestions[qid]]);
 	});
 
 	//Upvote Question
@@ -177,7 +179,7 @@ io.sockets.on('connection', function (socket) {
 			upvotes.push(socket.id);
 
 		//Send Latest Questions
-		io.sockets.in(socket.roomId).emit('receiveQuestions', roomQuestions);
+		io.sockets.in(socket.roomId).emit('receiveQuestions', [roomQuestions[qid]]);
 	});
 
 
@@ -191,7 +193,7 @@ io.sockets.on('connection', function (socket) {
 		}
 
 		//Send Latest Questions
-		io.sockets.in(socket.roomId).emit('receiveQuestions', roomQuestions);
+		io.sockets.in(socket.roomId).emit('deleteQuestion', qid);
 	});
 
 
