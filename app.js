@@ -279,5 +279,3 @@ app.get('/r/:id', function(req, res){
 		res.sendfile('./routes/index.html');
 	}
 });
-
-
