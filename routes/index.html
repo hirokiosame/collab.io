@@ -27,338 +27,16 @@
 		<link rel="apple-touch-icon-precomposed" sizes="72x72" href="../ico/apple-touch-icon-72-precomposed.png">
 		<link rel="apple-touch-icon-precomposed" href="../ico/apple-touch-icon-57-precomposed.png">
 		<link rel="shortcut icon" href="../ico/favicon.png">
+		
 		<script src="/js/jquery.js"></script>
 		<script src="/socket.io/socket.io.js"></script>
+		<script src="/js/collabio.js"></script>
+
 <script>
-//(function() {
-$.fn.serializeObject = function(){
-    var o = {};
-    var a = this.serializeArray();
-    $.each(a, function() {
-        if (o[this.name] !== undefined) {
-            if (!o[this.name].push) {
-                o[this.name] = [o[this.name]];
-            }
-            o[this.name].push(this.value || '');
-        } else {
-            o[this.name] = this.value || '';
-        }
-    });
-    return o;
-};
-
-
-
-var collabio = {
-	socket: io.connect(),
-	PeerConnection: window.PeerConnection || window.webkitPeerConnection00 || window.webkitRTCPeerConnection,
-	adminId: '',
-	userId: '',
-	roomID: function(){
-		var url = document.URL.split('/');
-		if( url[4] ) 
-			return url[4];
-		else
-			return false;
-	},
-	initialize: function (){
-		console.log("Initiliazing Room...");
-		if(this.PeerConnection){
-			console.log("WEBRTC available!");
-		//	rtc.createStream({
-		//		"video": true,
-		//		"audio": true
-		//	}, function(stream) {
-		//		document.getElementById('you').src = URL.createObjectURL(stream);
-		//		videos.push(document.getElementById('you'));
-		//		//rtc.attachStream(stream, 'you');
-		//		subdivideVideos();
-		//	});
-		}else{
-			alert('Your browser is not supported or you have to turn on flags. In chrome you go to chrome://flags and turn on Enable PeerConnection remember to restart chrome');
-		}
-	}
-};
-
-//Draw
-var Draw = {};
-Draw.init = function() {
-	Draw.canvas = document.createElement('canvas');
-	Draw.canvas.height = 400;
-	Draw.canvas.width = $(".left").width();
-
-	$('#draw').append(Draw.canvas).width(Draw.canvas.width);
-
-	//Draw.canvas
-	Draw.canvas.offset = $(Draw.canvas).offset();
-	Draw.ctx = Draw.canvas.getContext("2d");
-	Draw.ctx.rect(0, 0, Draw.canvas.width, Draw.canvas.height);
-	Draw.ctx.fillStyle = "white";
-	Draw.ctx.fill();
-	Draw.ctx.strokeStyle = "#123";
-	Draw.ctx.lineWidth = 2;
-	Draw.ctx.lineCap = "round";
-	Draw.socket = collabio.socket;
-	Draw.socket.on('draw', function(data) {
-		console.log(data);
-		if (Draw.allowOthers) {
-			for (var i = 0, limit = data.length; i < limit; i ++) {
-				Draw.draw(data[i].x, data[i].y, data[i].type,data[i].color,data[i].stroke);
-			}
-		} else {
-			for (var i = 0, limit = data.length; i < limit; i ++) {
-				Draw.record.push(data[i])
-			} 
-		}
-	});
-
-	Draw.draw = function(x, y, type, color, stroke) {
-		Draw.ctx.strokeStyle = color;
-		Draw.ctx.lineWidth = stroke;
-		//console.log('x: '+x+" y: "+y+" color: "+Draw.ctx.strokeStyle+" stroke: "+stroke);
-		if (type === "dragstart") {
-			Draw.ctx.beginPath();
-			return Draw.ctx.moveTo(x, y);
-		} else if (type === "drag") {
-			Draw.ctx.lineTo(x, y);
-			return Draw.ctx.stroke();
-		} else {
-			return Draw.ctx.closePath();
-		}
-	};
-
-	Draw.sendImage = function () {
-		var img = Draw.canvas.toDataURL('image/jpeg');
-		$.ajax({
-			type: "POST",
-			url: "/save.js",
-			data: img,
-			dataType: 'json',
-			success: function(data) {
-				console.log("png sent");
-			},
-			fail: function() {
-				console.log("png failed");
-			}
-		});
-	};
-};
-
-
-
-
-
-
-
-
-
 $(document).ready(function(){
-
-	//Inquire Room
-	//If Room, Join
-	if( collabio.roomID() ){
-		$('h3.lead').html("Join the Room");
-		$('.getRoom form button').html("Join!");
-	}
-
-	//Show Modal
-	$('div.modal.getRoom').on('shown', function () {
-		$("input.name").focus();
-	}).modal({
-		backdrop: "static",
-		show: true,
-		keyboard: false
-	});
-
-	//Sign In
-	$(".getRoom form").submit(function(e){
-		e.preventDefault();
-
-		if( collabio.roomID() )
-			collabio.socket.emit('joinRoom', $(this).serializeObject());
-		else
-			collabio.socket.emit('createRoom', $(this).serializeObject());
-	});
-
-	//Get Room if Avaialable
-	collabio.socket.on('roomAvailable', function(data){
-		history.pushState(null, "", "/r/"+data.roomId);
-		collabio.adminId = data.roomAdmin;
-		collabio.userId = data.Id;
-		$('div.modal.getRoom').modal('hide');
-	});
-
-
-	/* Chat */
-	//Send Chat Message
-	$("div.chat form").submit(function(e){
-		e.preventDefault();
-		collabio.socket.emit('sendChat', $(this).serializeObject());
-		$(this)[0].reset();
-	});
-
-	//Receive Chat Messages
-	collabio.socket.on('receiveChat', function(data){
-		$("ul.conversation").html('');
-		data.forEach(function(e){
-			var time = new Date(e.time),
-				html = '<li title="' + time.getHours() + ':' + time.getMinutes() + ':' + time.getSeconds() + '"><span class="userName">' + e.userName + '</span> ' + e.text + '</li>';
-			console.log(e);
-			$("ul.conversation").append(html);
-		});
-		$("ul.conversation").scrollTop($("ul.conversation").height());
-	});
-
-
-	/* Questions */
-
-	//Ask Question
-	$(".questions form").submit(function(e){
-		e.preventDefault();
-		collabio.socket.emit('askQuestion', $(this).serializeObject());
-		$(this)[0].reset();
-	});
-
-
-	//Receive Questions
-	collabio.socket.on('receiveQuestions', function(data){
-		console.log(data);
-		//if(data == null){
-		//	$('ul.questions').html('');
-		//	return;
-		//}
-		//Calculate Votes
-		data.forEach(function(e, i){
-			if( e != null ){
-				e.id = i;
-				e.votes = e.upvotes.length - e.downvotes.length;
-			}
-		});
-
-		//Sort by Votes
-		data.sort(function(a, b) {
-			if( a!=null && b!=null){
-				var aID = a.votes;
-				var bID = b.votes;
-				return (aID == bID) ? 0 : (aID > bID) ? -1 : 1;
-			}
-		});
-
-		$('ul.questions').html('');
-		data.forEach(function(e, i){
-			if( e != null ){
-				var html = '<li qid="'+e.id+'"><div><a class="up">&#9650;</a> ' + e.votes + ' <a class="down">&#9660;</a></div>'+ e.text;
-				html += ' <a class="evernote" qid="'+e.id+'">(save to Evernote)</a>';
-				if( collabio.userId == collabio.adminId ){
-					html += ' <a class="remove">&#x00d7;</a>';
-				}
-				html += '</li>';
-				$('ul.questions').append(html);
-			}
-		});
-
-		//Bind Events
-		$("li a.up").click(function(){
-			collabio.socket.emit('upVote', $(this).parents().eq(1).attr("qid"));
-		});
-		$("li a.down").click(function(){
-			collabio.socket.emit('downVote', $(this).parents().eq(1).attr("qid"));
-		});
-		$("li a.remove").click(function(){
-			collabio.socket.emit('removeQuestion', $(this).parent().attr("qid"));
-		});
-	});
-
-
-	/* Save to Evernote */
-	$(document).on('click', '.evernote', function(e) {
-		collabio.socket.emit('evernoteSave', {'qid' : $(this).attr('qid'), path: $('canvas').get(0).toDataURL('img/png')});
-	});
-
-
-
-	/* Drawing */
-	Draw.init();
-	Draw.chunk = [];
-	Draw.record = [];
-	Draw.allowOthers = true;
-	$(window).on('resize',function() {
-		 Draw.canvas.offset = $(Draw.canvas).offset();
-	});
-
-	$('canvas').on('drag dragstart dragend', function(e) {
-
-		var offset, type, x, y;
-		type = e.handleObj.type;
-		offset = $(this).offset();
-
-		if (e.type =='dragstart') {
-			 Draw.chunk = [];
-			 Draw.allowOthers = false;
-
-		}
-
-		e.offsetX = e.clientX - Draw.canvas.offset.left + window.scrollX;
-		e.offsetY = e.clientY - Draw.canvas.offset.top + window.scrollY;
-		x = e.offsetX;
-		y = e.offsetY;
-		Draw.draw(x, y, type,Draw.ctx.strokeStyle,Draw.ctx.lineWidth);
-		var emitData = {
-			x: x,
-			y: y,
-			type: type,
-			color: Draw.ctx.strokeStyle
-		};
-
-		Draw.chunk.push(emitData);
-		if (e.type =='dragend') {
-			console.log('send')
-			console.log(Draw.chunk)
-			Draw.socket.emit('drawClick', Draw.chunk);
-			Draw.allowOthers = true;
-			for (var i = 0, limit = Draw.record.length; i < limit; i ++) {
-			Draw.draw(Draw.record[i].x, Draw.record[i].y, Draw.record[i].type,Draw.record[i].color,Draw.record[i].stroke);
-	}
-	Draw.record = [];
-		}
-	});
-
-
-	$('#clear').on('click',function(){
-		console.log("clear");
-		Draw.draw(0, 0, "dragstart","#fff",10000);
-		Draw.draw(400, 800, "drag","#fff",10000);
-		Draw.draw(400, 800, "dragend","#fff",10000);
-
-		var clear = [{
-			x: 0,
-			y: 0,
-			type: "dragstart",
-			color: "#fff",
-			stroke:10000
-		},{
-			x: 400,
-			y: 800,
-			type: "drag",
-			color: "#fff",
-			stroke:10000
-		},{
-			x: 400,
-			y: 800,
-			type: "dragend",
-			color: "#123",
-			stroke:2
-		}];
-		Draw.socket.emit('drawClick',clear);
-		Draw.ctx.strokeStyle = "#123";
-		Draw.ctx.lineWidth = 2;
-	})
-
-	Draw.socket.emit('join',{});
-
+	collabio = new Collabio();
 });
-window.Draw = Draw;
-//})();
+
 </script>
 <style>
 * {
@@ -637,6 +315,25 @@ body,html {
 	position: fixed;
 }
 
+.questionText {
+	display: block;
+	padding: 10px;
+	border-bottom: 1px dotted #cdcdcd;
+}
+
+ul.questions li {
+	padding-top: 10px;
+}
+
+ul.questions {
+	margin-left: 0px;
+}
+
+ul.questions li a {
+	margin-top: 10px;
+	margin-left: 10px;
+	display: inline-block;
+}
 
 
 </style>
