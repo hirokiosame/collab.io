@@ -1,24 +1,23 @@
 (function(){
 
-
 	/*
 		Serialization before sending to server
 	*/
 	$.fn.serializeObject = function(){
-	    var o = {},
-	    a = this.serializeArray();
+		var o = {},
+		a = this.serializeArray();
 
-	    $.each(a, function() {
-	        if (o[this.name] !== undefined) {
-	            if (!o[this.name].push) {
-	                o[this.name] = [o[this.name]];
-	            }
-	            o[this.name].push(this.value || '');
-	        } else {
-	            o[this.name] = this.value || '';
-	        }
-	    });
-	    return o;
+		$.each(a, function() {
+			if (o[this.name] !== undefined) {
+				if (!o[this.name].push) {
+					o[this.name] = [o[this.name]];
+				}
+				o[this.name].push(this.value || '');
+			} else {
+				o[this.name] = this.value || '';
+			}
+		});
+		return o;
 	};	
 
 	/*
@@ -39,7 +38,7 @@
 		this.pointer[0].qid = this.id;
 
 		$("<a />", {class : "up", html : "&#9650;"}).appendTo(this.pointer[0]);
-		$("<a />", {class : "score",text : this.score }).appendTo(this.pointer[0]);
+		$("<a />", {class : "score", text : this.score }).appendTo(this.pointer[0]);
 		$("<a />", {class : "down", html : "&#9660;"}).appendTo(this.pointer[0]);
 		$("<a />", {class : "evernote", html : "Save to Evernote"}).appendTo(this.pointer[0]);
 		
@@ -100,9 +99,7 @@
 	collabio.prototype.initDialogue = function() {
 		var app = this; // reference to global object for use in jquery callbacks
 
-		/*
-		Checks if user came into existing room, if not proposes to create a room
-		*/
+		//Checks if user came into existing room, if not prompts to create one
 		if( this.roomID() ){
 			$('h3.lead').html("Join the Room");
 			$('.getRoom form button').html("Join!");
@@ -121,13 +118,14 @@
 		$(".getRoom form").submit(function(e){
 			e.preventDefault();
 
+			//!Check if user name is blank or is invalid
+
 			if( app.roomID() ) {
 				app.socket.emit('joinRoom', $(this).serializeObject());
 			} else {
 				app.socket.emit('createRoom', $(this).serializeObject());
 			}
 		});
-
 
 		//Get Room if Avaialable
 		this.socket.on('roomAvailable', function(data){			
@@ -136,12 +134,13 @@
 			app.room.adminId = data.roomAdmin;
 			app.userId = data.Id;
 			$('div.modal.getRoom').modal('hide');
+
+			evernote.initialize();
 		});
 
 
-
 		// HERE should go evernote authorisation
-
+		evernote.bindSave();
 	};
 
 	/*
@@ -159,6 +158,7 @@
 
 		//Receive Chat Messages
 		this.socket.on('receiveChat', function(data){
+			if(data==null) return;
 			data.forEach(function(e) {
 				var time = new Date(e.time),
 				message = $('<li />',{title:time.getHours() + ':' + time.getMinutes() + ':' + time.getSeconds()});
@@ -221,6 +221,7 @@
 
 		// Receive other users' drawings
 		this.socket.on('draw', function(data) {
+			if(data==null) return;
 			if (app.draw.allowOthers) {
 				for (var i = 0, limit = data.length; i < limit; i++ ) {
 					app.draw.draw(data[i].x, data[i].y, data[i].type,data[i].color,data[i].stroke);
@@ -283,7 +284,7 @@
 
 
 		// clear button interaction
-		$('#clear').on('click',function(){
+		$('#clear').on('click', function(){
 
 			// clear canvas locally
 			app.draw.draw(0, 0, "dragstart","#fff",10000);
@@ -338,6 +339,7 @@
 			3.  append new question
 		*/
 		this.socket.on('receiveQuestions', function(data) {
+			if(data==null) return;
 			var question;
 			if (data.length > 1) { // initial append of all questions
 				console.log("Receiving socket: initial append of all questions...");
@@ -425,3 +427,7 @@
 
 	window.Collabio = collabio;
 })(window);
+
+$(document).ready(function(){
+	collabio = new Collabio();
+});

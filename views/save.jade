@@ -1,0 +1,7 @@
+extends layout
+
+block content
+	script
+		evernote.initialize();
+		evernote.callback("#{oauth_verifier}", "#{oauth_token}", "#{roomId}");
+	div Saved!

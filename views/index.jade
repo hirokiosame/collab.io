@@ -1,0 +1,38 @@
+extends layout
+
+block content
+	div.modal.fade.getRoom
+		div.modal-body
+			form.form-inline
+				input.name(type="text", placeholder="What's your name?", autocomplete="off")
+				button.Roman_button Create Room!
+	div.navbar.navbar-fixed-top
+		div.navbar-inner.RomanBar
+			div.container
+				button.btn.btn-navbar(type="button", data-toggle="collapse", data-target=".nav-collapse")
+					span.icon-bar
+					span.icon-bar
+					span.icon-bar
+				div.nav-collapse.collapse
+					ul.nav
+						li: a(href="/") collab.io
+						li: a(href="/") Create a New Room
+						li: a(href="") Active Users
+						li: a.saveEvernote Save to Evernote
+	div.container-fluid
+		div.row-fluid.Roman-fluid
+			div.span8.column.left
+				div#draw
+					div.header
+						span#clear Clear
+			div.chat
+				ul.conversation
+				div#chat_input
+					form
+						input(type="text", placeholder="Message", name="text")
+		div.span4.column.right
+			div.questions
+				form
+					textarea(name="question", placeholder="Ask a question...")
+					input#submitquestion(type="submit", value="Ask")
+				ul.questions

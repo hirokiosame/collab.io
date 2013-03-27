@@ -6,17 +6,21 @@ var express = require('express'),
 
 
 app.configure(function(){
-  app.set('port', process.env.PORT || 8081);
-  app.use(express.logger('dev'));
-  app.use(express.bodyParser());
-  app.use(express.methodOverride());
-  app.use(app.router);
-  app.use(express.static(path.join(__dirname, 'public')));
+	app.set('port', process.env.PORT || 8081);
+	app.set('views', __dirname+'/views');
+	app.set('view engine', 'jade');
+
+	app.use(express.logger('dev'));
+	app.use(express.bodyParser());
+	app.use(express.methodOverride());
+	app.use(app.router);
+	app.use(express.static(path.join(__dirname, 'public')));
 });
 
 app.configure('development', function(){
   app.use(express.errorHandler());
 });
+
 
 
 var	server = http.createServer(app).listen(app.get('port'), function(){
@@ -258,7 +262,8 @@ io.sockets.on('connection', function (socket) {
 
 //Create Room
 app.get('/', function(req, res){
-	res.sendfile('./routes/index.html');
+	//res.sendfile('./routes/index.html');
+	res.render('index');
 });
 
 //iPhone Canvas
@@ -279,4 +284,14 @@ app.get('/r/:id', function(req, res){
 		//Show Page
 		res.sendfile('./routes/index.html');
 	}
+});
+
+
+//Join Room
+app.get('/save/:id', function(req, res){
+	var evernote = req.query;
+	evernote.roomId = req.params.id;
+	console.log(evernote);
+	res.render('save', evernote);
+
 });
