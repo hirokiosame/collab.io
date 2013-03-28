@@ -23,6 +23,44 @@ app.configure('development', function(){
 
 
 
+
+//Create Room
+app.get('/', function(req, res){
+	//res.sendfile('./routes/index.html');
+	res.render('index');
+});
+
+//iPhone Canvas
+app.get('/r/:id/:user', function(req, res){
+	//Verify that the ids and the user exists
+	res.render('index');
+});
+
+//Join Room
+app.get('/r/:id', function(req, res){
+	var roomId = req.params.id;
+	console.log("Trying to join room: "+roomId);
+
+	if( !io.sockets.manager.rooms['/'+roomId] ){
+		console.log("Room "+roomId+" doesnt exist!");
+		res.redirect('/');
+	}else{
+		//Show Page
+		res.render('index');
+	}
+});
+
+
+//Join Room
+app.get('/save/:id', function(req, res){
+	var evernote = req.query;
+	evernote.roomId = req.params.id;
+	console.log(evernote);
+	res.render('save', evernote);
+
+});
+
+
 var	server = http.createServer(app).listen(app.get('port'), function(){
 		console.log("Express server listening on port " + app.get('port'));
 	}),
@@ -37,6 +75,13 @@ io.sockets.manager.roomDrawing = {};
 io.sockets.on('connection', function (socket) {
 	//Set Socket User
 	console.log("New User: " + socket.id);
+
+	//Check if Room Requested Exists
+	var roomUrl = socket.handshake.headers.referer,
+		roomId = roomUrl.split('/').pop();
+	if( roomId!="" && !io.sockets.manager.rooms['/'+roomId] ){
+		socket.emit('roomNotAvailable', "The room you requested is no longer available.");
+	}
 
 	//Create Room
 	socket.on('createRoom', function(post){
@@ -211,7 +256,9 @@ io.sockets.on('connection', function (socket) {
 		//if (data[0].color == "#fff") {
 		//	roomDrawing = [];
 		//}
-		roomDrawing['/'+socket.roomId] = roomDrawing['/'+socket.roomId].concat(data);
+		if(roomDrawing['/'+socket.roomId]){
+			roomDrawing['/'+socket.roomId] = roomDrawing['/'+socket.roomId].concat(data);
+		}
 
 		//Send Latest Drawing
 		io.sockets.in(socket.roomId).emit('draw', data);
@@ -259,39 +306,3 @@ io.sockets.on('connection', function (socket) {
 });
 
 
-
-//Create Room
-app.get('/', function(req, res){
-	//res.sendfile('./routes/index.html');
-	res.render('index');
-});
-
-//iPhone Canvas
-app.get('/r/:id/:user', function(req, res){
-	//Verify that the ids and the user exists
-	res.sendfile('./routes/index.html');
-});
-
-//Join Room
-app.get('/r/:id', function(req, res){
-	var roomId = req.params.id;
-	console.log("Trying to join room: "+roomId);
-
-	if( !io.sockets.manager.rooms['/'+roomId] ){
-		console.log("Room "+roomId+" doesnt exist!");
-		res.redirect('/');
-	}else{
-		//Show Page
-		res.sendfile('./routes/index.html');
-	}
-});
-
-
-//Join Room
-app.get('/save/:id', function(req, res){
-	var evernote = req.query;
-	evernote.roomId = req.params.id;
-	console.log(evernote);
-	res.render('save', evernote);
-
-});

@@ -1,13 +1,13 @@
 extends layout
 
 block content
-	div.modal.fade.getRoom
+	div.modal.getRoom
 		div.modal-body
 			form.form-inline
-				input.name(type="text", placeholder="What's your name?", autocomplete="off")
-				button.Roman_button Create Room!
+				input.name(type="text", name="name", placeholder="What's your name?", autocomplete="off")
+				button Create Room!
 	div.navbar.navbar-fixed-top
-		div.navbar-inner.RomanBar
+		div.navbar-inner
 			div.container
 				button.btn.btn-navbar(type="button", data-toggle="collapse", data-target=".nav-collapse")
 					span.icon-bar
@@ -20,19 +20,18 @@ block content
 						li: a(href="") Active Users
 						li: a.saveEvernote Save to Evernote
 	div.container-fluid
-		div.row-fluid.Roman-fluid
-			div.span8.column.left
-				div#draw
+		div.row-fluid
+
+			div.span8
+				div.draw
 					div.header
-						span#clear Clear
-			div.chat
-				ul.conversation
-				div#chat_input
+						span.clear Clear
+				div.chat
+					ul.conversation
 					form
 						input(type="text", placeholder="Message", name="text")
-		div.span4.column.right
-			div.questions
+			div.span4.questions
 				form
 					textarea(name="question", placeholder="Ask a question...")
-					input#submitquestion(type="submit", value="Ask")
+					input.submit(type="submit", value="Ask")
 				ul.questions

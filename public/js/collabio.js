@@ -25,8 +25,9 @@
 	*/
 
 	// Object for every question, with pointer to Dom
-	function Question(input,app){
-
+	function Question(input, app){
+		console.log(input);
+		console.log(app.userId);
 		var p = this;
 		this.id = input.id;
 		this.text = input.text;
@@ -40,15 +41,14 @@
 		$("<a />", {class : "up", html : "&#9650;"}).appendTo(this.pointer[0]);
 		$("<a />", {class : "score", text : this.score }).appendTo(this.pointer[0]);
 		$("<a />", {class : "down", html : "&#9660;"}).appendTo(this.pointer[0]);
-		$("<a />", {class : "evernote", html : "Save to Evernote"}).appendTo(this.pointer[0]);
-		
-		if(app.userId == app.adminId ){
-			$("<a / >", {class : "remove", html : "&#x00d7;"}).appendTo(this.pointer[0]);
-		}
+		//$("<a />", {class : "evernote", html : "Save to Evernote"}).appendTo(this.pointer[0]);
 
 		$("<span />", {class : "questionText", html : p.text }).appendTo(this.pointer[0]);
 
-	
+		if( app.userId == input.askedBy || app.userId == app.adminId ){
+			$("<a />", {class : "remove", html : "&#x00d7;"}).appendTo(this.pointer[0]);
+		}
+
 	}
 
 	// Global Object for Collabio
@@ -72,8 +72,6 @@
 		this.initQuestions();
 		this.initDraw();
 		this.socket.emit('join',{});
-
-
 	}
 
 	/*
@@ -106,7 +104,7 @@
 		}
 
 		// Shows initial dialogue 
-		$('div.modal.getRoom').on('shown', function () {
+		$('div.modal').on('shown', function () {
 			$("input.name").focus();
 		}).modal({
 			backdrop: "static",
@@ -115,7 +113,7 @@
 		});
 
 		//Sign In
-		$(".getRoom form").submit(function(e){
+		$("div.modal form").submit(function(e){
 			e.preventDefault();
 
 			//!Check if user name is blank or is invalid
@@ -128,16 +126,21 @@
 		});
 
 		//Get Room if Avaialable
-		this.socket.on('roomAvailable', function(data){			
+		this.socket.on('roomAvailable', function(data){		
 			history.pushState(null, "", "/r/"+data.roomId);
 			
+			//Admin not working. Needs to receive client array instead
 			app.room.adminId = data.roomAdmin;
-			app.userId = data.Id;
+			app.userId = data.userId;
 			$('div.modal.getRoom').modal('hide');
 
 			evernote.initialize();
 		});
 
+		this.socket.on('roomNotAvailable', function(data){
+			alert(data);
+			document.location = "/";
+		});
 
 		// HERE should go evernote authorisation
 		evernote.bindSave();
@@ -199,24 +202,24 @@
 
 	// Initialization of Drawing
 	collabio.prototype.initDraw = function() {
-		var app = this; // reference to global object for use in jquery callbacks
+		var app = this;
 		this.draw = new this.createDraw();
 
-		this.draw.canvas = document.createElement('canvas');
-		this.draw.canvas.height = 400;
-		this.draw.canvas.width = $(".left").width();
+
+		this.draw.canvas = $('<canvas height="'+$('div.draw').height()+'" width="'+$('div.draw').width()+'"></canvas>').appendTo('div.draw');
+
+		this.draw.canvas = this.draw.canvas[0];
 		this.draw.record = [];
-
-		$('#draw').append(this.draw.canvas).width(this.draw.canvas.width);
-
 		
 		this.draw.canvas.offset = $(this.draw.canvas).offset();
 		this.draw.ctx = this.draw.canvas.getContext("2d");
 		this.draw.ctx.rect(0, 0, this.draw.canvas.width, this.draw.canvas.height);
 		this.draw.ctx.fillStyle = "white";
 		this.draw.ctx.fill();
+
+		//Default Stroke Values
 		this.draw.ctx.strokeStyle = "#123";
-		this.draw.ctx.lineWidth = 2;
+		this.draw.ctx.lineWidth = 1;
 		this.draw.ctx.lineCap = "round";
 
 		// Receive other users' drawings
@@ -234,9 +237,12 @@
 		});
 
 		// re-calculate offsets for correct drawinf in case of window resizing
-		$(window).on('resize',function() {
+		$(window).on('resize', function() {
+			//app.draw.rect(0, 0, $('div.draw').width(), $('div.draw').height());
+			//$("canvas").attr("width", $('div.draw').width()).attr("height", $('div.draw').height());
 			app.draw.canvas.offset = $(app.draw.canvas).offset();
 		});
+
 
 
 		/*
@@ -245,6 +251,7 @@
 
 		$('canvas').on('drag dragstart dragend', function(e) {
 
+			
 			var offset, type, x, y;
 			type = e.handleObj.type;
 			offset = $(this).offset();
@@ -260,9 +267,7 @@
 			x = e.offsetX;
 			y = e.offsetY;
 
-			
-
-			app.draw.draw(x, y, type,app.draw.ctx.strokeStyle,app.draw.ctx.lineWidth);
+			app.draw.draw(x, y, type,app.draw.ctx.strokeStyle, app.draw.ctx.lineWidth);
 			var emitData = {
 				x: x,
 				y: y,
@@ -280,11 +285,12 @@
 				}
 				app.draw.record = [];
 			}
+			
 		});
 
 
 		// clear button interaction
-		$('#clear').on('click', function(){
+		$('span.clear').on('click', function(){
 
 			// clear canvas locally
 			app.draw.draw(0, 0, "dragstart","#fff",10000);

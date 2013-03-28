@@ -1,6 +1,5 @@
 var evernote = {
 	hostName: "https://sandbox.evernote.com",
-	oauth: "",
 	initialize: function(){
 		this.oauth = OAuth({
 			consumerKey: "hirokiosame",

@@ -1,150 +1,40 @@
 * {
 	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 	font-weight: 200;
+	padding: 0;
+	margin: 0;
 }
 
-#draw {
-	background: #fff;
-	position: relative;
-	display: block;
-	width: 800px;
-	height: 400px;
-
-}
-
-#draw .header {
-	position: absolute;
-	height: 49px;
-	width: 100%;
-	background-color: #fff;
-	border-bottom: 1px solid #cdcdcd;
-
-}
-
-#draw .header span {
-	cursor:pointer;
-
-}
-
-#draw .header span {
-	border: 2px solid #fff;
-	min-height: 21px;
-	display: inline-block;
-	padding: 12px;
-	float: right;
-	border-left: 1px solid #cdcdcd;
-}
-#draw .header span:hover {
-	cursor:pointer;
-	background-color: #eee;
-}
-
-
-#question_area a:visited {
-	color: #08c;
-	float: right;
-	text-decoration: none;
-}
-
-#question_area li {
-    list-style-type: none;
-}
-div.questions textarea {
-	min-width: 80%;
-	float: left;
-	max-width: 70%;
-	max-height: 25px;
-	border: 0px solid #cdcdcd;
-	border-bottom: 1px solid #cdcdcd;
-	margin: 0px;
-	box-shadow: none;
-	border-radius: 0;
-	font-size: 16px;
-	padding-left: 5%;
-	padding-right: 0;
-	padding-top: 4px;
-	padding-bottom: 10px;
-	font-weight: 100;
-}
-div.questions textarea:hover {
-	outline: none;
-
-}
-#quest_box {
-	width: 100%;
-}
-div.questions textarea:focus {
-	outline: none;
-	box-shadow: none;
-}
-
-#submitquestion {
-	width: 15%;
-	float: left;
-	height: 50px;
-	background: #fff;
-	border: 1px solid #cdcdcd;
-	border-top: 0;
-	font-size: 14px;
-	margin-top: -10px;
-	font-weight: 200;
-}
-#submitquestion:hover {
-	background-color: #eee;
-	float: left;
-	cursor:pointer;
-
-}
-
-.question {
-	height: 40px;
-	padding-top: 14px;
-	float: left;
-	width: 380px;
-	border: 10px solid #fff;
-	border-bottom: 1px solid #cdcdcd;
-}
-ul.questions{
-	list-style: none;
-}
-ul.questions li a:hover{
-	text-decoration: none;
-	cursor: pointer;
-}
-ul.questions li div{
-	display: inline-block;
-}
-
-
-.left {
-	overflow:hidden;
-}
-.span4.column.right {
-	margin-left: 0;
-	width:34.188034188% !important;
-}
-
-html, body, .container-fluid, .row-fluid{
-	height:100%;
-	padding: 0 !important;
+html, .container-fluid, .row-fluid{
+	height: 100%;
+	_padding: 0 !important;
 }
 form{
 	margin: 0;
 }
-div.modal.getRoom{
+body {
+	height: 100%;
+	box-sizing: border-box;
+	padding-top: 50px !important;
+}
+//body,html {
+	min-width:1280px !important;
+	width:1280px !important;
+}
+
+
+
+.modal{
 	width: 360px;
 	margin-left: -180px;
 	border-radius: 0;
 	font-weight: 100 !important;
-}
-div.modal.getRoom.in{
 	top: 20%;
 }
-
-.getRoom .modal-body {
+.modal-body {
 	padding: 0 !important;
 }
-div.modal.getRoom form input.name{
+.modal form input.name{
 	font-size: 25px;
 	width: 330px;
 	border-radius: 0;
@@ -158,8 +48,7 @@ div.modal.getRoom form input.name{
 	font-weight: 100 !important;
 	text-align: center;
 }
-
-.Roman_button {
+.modal form button{
 	font-weight: 100 !important;
 	width: 360px;
 	border: 0px solid #222;
@@ -167,30 +56,84 @@ div.modal.getRoom form input.name{
 	background-color: #fff;
 	font-size: 22px;
 }
-
-.Roman_button:hover {
+.modal form button:hover {
 	width: 360px;
 	background-color: #eee;
 }
 
-.column{
-	padding-top: 41px;
-	position: relative;
+
+
+.navbar-inner{
+	height: 50px !important;
+	margin-bottom: 0px !important;
+	background:#fff !important;
+	box-shadow: none!important;
 }
-.column.left{
+.navbar .nav > li > a {
+	text-transform: uppercase;
+	font-size: 14px;
+	font-weight: 400;
+	padding: 15px;
+	color: #000;
+	border-left: 1px solid #cdcdcd;
+}
+.navbar .nav > li:hover {
+	background-color: #eee;
+}
+
+//.container-fluid{
+	margin-top: 51px;
+}
+
+
+.span8{
+	border-left: 1px solid #cdcdcd;
+	border-right: 1px solid #cdcdcd;
 	height: 100%;
-	border-right:1px solid #cdcdcd;
 }
-.column.left canvas{
-	width:100%;
+
+
+
+.draw{
+	box-sizing: border-box;
+	background: #fff;
+	width: 100%;
+	height: 65%;
 	border-bottom: 1px solid #cdcdcd;
+	position: relative;
+	overflow: hidden;
 }
-.chat{
+.draw .header {
+	height: 30px;
+	width: 100%;
+	background-color: #fff;
+	border-bottom: 1px solid #cdcdcd;
+	position: absolute;
+
+}
+.draw .header span {
+	cursor: pointer;
+	display: inline-block;
+	padding: 0 12px;
+	height: 100%;
+	line-height: 30px;
+	float: right;
+	border-left: 1px solid #cdcdcd;
+}
+.draw .header span:hover {
+	cursor: pointer;
+	background-color: #eee;
+}
+
+
+.chat {
+	box-sizing: border-box;
 	height: 35%;
 }
 .chat ul.conversation{
 	overflow: scroll;
 	height: 80%;
+	margin: 0;
 }
 .chat ul.conversation span.userName{
 	font-weight:bold;
@@ -200,17 +143,19 @@ div.modal.getRoom form input.name{
 
 }
 .chat ul.conversation span.userName:after {
-	content: ":";
+	content: ": ";
 }
 
-#chat_input {
-	position: absolute;
-	bottom: 0;
+.chat form {
+	_position: absolute;
+	_bottom: 0px;
 	width: 100%;
+	height: 20%;
 }
 
-#chat_input input {
+.chat form input {
 	width: 100%;
+	height: 100%;
 	border: 0px solid #cdcdcd;
 	border-top: 1px solid #cdcdcd;
 	margin: 0px;
@@ -219,60 +164,92 @@ div.modal.getRoom form input.name{
 	font-size: 16px;
 	padding: 13px;
 	font-weight: 100;
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
 }
 
-.RomanBar {
-	background:#fff !important;
-	height: 49px;
-	box-shadow: none!important;
+
+
+div.questions{
+	margin-left: 0 !important;
+	border-right: 1px solid #cdcdcd;
+	height: 100%;
 }
-.Roman-fluid {
-	margin-top: 9px;
+div.questions form textarea{
+	width: 85%;
+	float: left;
+	border: 0px solid #cdcdcd;
+	border-bottom: 1px solid #cdcdcd;
+	margin: 0px;
+	box-shadow: none;
+	border-radius: 0;
+	font-size: 16px;
+	font-weight: 100;
+	padding: 6px 10px 3px 10px;
+	box-sizing: border-box;
 }
 
-.RomanBar .active a {
-	background: #fff !important;
-	box-shadow: none !important;
-	border: 2px solid #222;	
-
+div.questions form input.submit{
+	width: 15%;
+	height: 50px;
+	background: #fff;
+	border: 1px solid #cdcdcd;
+	border-top: 0;
+	border-right: 0;
+	font-size: 14px;
+	font-weight: 200;
+	box-sizing: border-box;
 }
-.RomanBar li a {
-	text-transform: uppercase !important;
-	font-size: 14px !important;
-	font-weight: 400;
-	height: 25px;
-	padding-top: 14px !important;
-	color: #000 !important;
-	border-left: 1px solid #cdcdcd;
-}
-
-.RomanBar li:hover {
+div.questions form input.submit:hover {
 	background-color: #eee;
+	cursor: pointer;
 }
 
-#draw {
-	min-height: 400px;
+ul.questions{
+	list-style: none;
+}
+ul.questions li a:hover{
+	text-decoration: none;
+	cursor: pointer;
+}
+ul.questions li div{
+	display: inline-block;
 }
 
-body,html {
-	min-width:1280px !important;
-	width:1280px !important;
+/*
+
+.question {
+	height: 40px;
+	padding-top: 14px;
+	width: 380px;
+	border: 10px solid #fff;
 }
 
-.span4.column.right {
-	margin-left: 0;
-	width: 435px !important;
-	
+#question_area a:visited {
+	color: #08c;
+	float: right;
+	text-decoration: none;
 }
 
-.navbar.navbar-fixed-top,.navbar-inner.RomanBar{
-	height:50px !important;
-	margin-bottom: 0px !important;
+#question_area li {
+    list-style-type: none;
+}
+div.questions textarea {
 
 }
-.navbar.navbar-fixed-top {
-	position: fixed;
+div.questions textarea:hover {
+	outline: none;
+
 }
+#quest_box {
+	width: 100%;
+}
+div.questions textarea:focus {
+	outline: none;
+	box-shadow: none;
+}
+
 
 .questionText {
 	display: block;
@@ -293,3 +270,36 @@ ul.questions li a {
 	margin-left: 10px;
 	display: inline-block;
 }
+/*
+
+
+
+.left {
+	overflow:hidden;
+}
+.span4.column.right {
+	margin-left: 0;
+	width:34.188034188% !important;
+}
+
+
+
+.column{
+	padding-top: 41px;
+	position: relative;
+}
+.column.left{
+	height: 100%;
+	border-right:1px solid #cdcdcd;
+}
+.column.left canvas{
+	width:100%;
+	border-bottom: 1px solid #cdcdcd;
+}
+
+.span4.column.right {
+	margin-left: 0;
+	width: 435px !important;
+	
+}
+
