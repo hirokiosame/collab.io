@@ -208,14 +208,25 @@ div.questions form input.submit:hover {
 
 ul.questions{
 	list-style: none;
+	margin: 0;
+}
+ul.questions li{
+	padding: 5px 0;
+	border-bottom: 1px dotted #cdcdcd;
+}
+ul.questions li a {
+	margin-left: 10px;
+	display: inline-block;
 }
 ul.questions li a:hover{
 	text-decoration: none;
 	cursor: pointer;
 }
-ul.questions li div{
+ul.questions li .span {
 	display: inline-block;
 }
+
+
 
 /*
 
@@ -251,25 +262,7 @@ div.questions textarea:focus {
 }
 
 
-.questionText {
-	display: block;
-	padding: 10px;
-	border-bottom: 1px dotted #cdcdcd;
-}
 
-ul.questions li {
-	padding-top: 10px;
-}
-
-ul.questions {
-	margin-left: 0px;
-}
-
-ul.questions li a {
-	margin-top: 10px;
-	margin-left: 10px;
-	display: inline-block;
-}
 /*
 
 
