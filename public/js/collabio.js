@@ -92,8 +92,6 @@
 	Initialize global app
 	Sets up all the interactions, events, specifically chat and question system 
 	*/
-
-
 	collabio.prototype.initDialogue = function() {
 		var app = this; // reference to global object for use in jquery callbacks
 
@@ -242,6 +240,9 @@
 			}
 		});
 
+		// FIX
+		app.draw.lastPoint = 0.0;
+
 		// re-calculate offsets for correct drawinf in case of window resizing
 		$(window).on('resize', function() {
 			//app.draw.rect(0, 0, $('div.draw').width(), $('div.draw').height());
@@ -271,6 +272,8 @@
 				 app.draw.chunk = [];
 				 app.draw.allowOthers = false;
 
+				// FIX
+				
 			}
 
 			e.offsetX = e.clientX - app.draw.canvas.offset.left + window.scrollX;
@@ -313,19 +316,19 @@
 				y: 0,
 				type: "dragstart",
 				color: "#fff",
-				stroke:10000
+				stroke: 10000
 			},{
 				x: 400,
 				y: 800,
 				type: "drag",
 				color: "#fff",
-				stroke:10000
+				stroke: 10000
 			},{
 				x: 400,
 				y: 800,
 				type: "dragend",
 				color: "#123",
-				stroke:2
+				stroke: 2
 			}];
 			app.socket.emit('drawClick',clear);
 			app.draw.ctx.strokeStyle = "#123";
