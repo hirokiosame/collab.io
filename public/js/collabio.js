@@ -218,16 +218,22 @@
 		this.draw.ctx.fill();
 
 		//Default Stroke Values
-		this.draw.ctx.strokeStyle = "#123";
 		this.draw.ctx.lineWidth = 1;
 		this.draw.ctx.lineCap = "round";
+
+
+		var color = $("div.colorpalette span.selected").attr("class").split(" ");
+
+		this.draw.ctx.strokeStyle = color[0];
+
+
 
 		// Receive other users' drawings
 		this.socket.on('draw', function(data) {
 			if(data==null) return;
 			if (app.draw.allowOthers) {
 				for (var i = 0, limit = data.length; i < limit; i++ ) {
-					app.draw.draw(data[i].x, data[i].y, data[i].type,data[i].color,data[i].stroke);
+					app.draw.draw(data[i].x, data[i].y, data[i].type, data[i].color,data[i].stroke);
 				}
 			} else {
 				for (var i = 0, limit = data.length; i < limit; i++ ) {
@@ -243,6 +249,11 @@
 			app.draw.canvas.offset = $(app.draw.canvas).offset();
 		});
 
+		$("div.colorpalette span").on("click", function(e){
+			$("div.colorpalette span").removeClass("selected");
+			app.draw.ctx.strokeStyle = $(this).attr("class");
+			$(this).addClass("selected");
+		});
 
 
 		/*

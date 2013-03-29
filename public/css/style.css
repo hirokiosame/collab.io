@@ -15,7 +15,7 @@ form{
 body {
 	height: 100%;
 	box-sizing: border-box;
-	padding-top: 50px !important;
+	padding-top: 51px !important;
 }
 //body,html {
 	min-width:1280px !important;
@@ -109,18 +109,50 @@ body {
 	background-color: #fff;
 	border-bottom: 1px solid #cdcdcd;
 	position: absolute;
-
 }
-.draw .header span {
+.draw .header span{
+	box-sizing: border-box;
 	cursor: pointer;
 	display: inline-block;
-	padding: 0 12px;
 	height: 100%;
+}
+div.colorpalette{
+	display: inline-block;
+	height: 100%;
+}
+div.colorpalette span{
+	border: 1px solid rgba(0,0,0,0);
+	margin-right: 1px;
+	width: 30px;
+}
+div.colorpalette span.black{
+	background-color: black;
+}
+div.colorpalette span.red{
+	background-color: red;
+}
+div.colorpalette span.orange{
+	background-color: orange;
+}
+div.colorpalette span.yellow{
+	background-color: yellow;
+}
+div.colorpalette span.green{
+	background-color: green;
+}
+div.colorpalette span.blue{
+	background-color: blue;
+}
+div.colorpalette span.selected{
+	border: 1px solid #0088cc;
+}
+.draw .header span.clear {
+	padding: 0 12px;
 	line-height: 30px;
 	float: right;
 	border-left: 1px solid #cdcdcd;
 }
-.draw .header span:hover {
+.draw .header span.clear:hover {
 	cursor: pointer;
 	background-color: #eee;
 }
