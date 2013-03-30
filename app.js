@@ -6,7 +6,7 @@ var express = require('express'),
 
 
 app.configure(function(){
-	app.set('port', process.env.PORT || 8081);
+	app.set('port', process.env.PORT || 3000);
 	app.set('views', __dirname+'/views');
 	app.set('view engine', 'jade');
 
@@ -250,26 +250,28 @@ io.sockets.on('connection', function (socket) {
 
 	/* Drawing */
 	socket.on('drawClick', function(data) {
+		console.log(data);
 		var roomDrawing = io.sockets.manager.roomDrawing;
 
-<<<<<<< HEAD
+
 		/* Not sure what purpose this serves */
-		//if (data[0].color == "#fff") {
-		//	roomDrawing = [];
-		//}
-		if(roomDrawing['/'+socket.roomId]){
-			roomDrawing['/'+socket.roomId] = roomDrawing['/'+socket.roomId].concat(data);
-=======
-		/* This piece clears the the canvas therefore clears the history of the drawing in the server */
-		if (data[0].color == "#fff") {
+		if (data.color == "#fff") {
 			roomDrawing = [];
->>>>>>> Small commit on start of fixing canvas
 		}
 
+		if(roomDrawing['/'+socket.roomId]){
+			roomDrawing['/'+socket.roomId] = roomDrawing['/'+socket.roomId].concat(data);
+		}
+
+		/* This piece clears the the canvas therefore clears the history of the drawing in the server 
+		if (data[0].color == "#fff") {
+			roomDrawing = [];
+
+		}*/
 
 		roomDrawing['/'+socket.roomId] = roomDrawing['/'+socket.roomId].concat(data);
 		//Send Latest Drawing
-		io.sockets.in(socket.roomId).emit('draw', data);
+		socket.broadcast.to(socket.roomId).emit('draw', [data]);
 	});
 
 

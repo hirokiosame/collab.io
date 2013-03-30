@@ -178,36 +178,57 @@
 
 	// general draw function
 	collabio.prototype.createDraw = function() {
-		this.allowOthers = true;
-		this.chunk = [];
-		this.record = [];
+		this.lastPoint = [0.0,0.0];
+		this.rendererID;
+		// queue contains all the pairs needed to be rendered
+		this.queue = [];
 	};
-	collabio.prototype.createDraw.prototype.draw = function(x, y, type, color, stroke) {
-		this.ctx.strokeStyle = color;
-		this.ctx.lineWidth = stroke;
-		
-		if (type === "dragstart") {
-			this.ctx.beginPath();
-			return this.ctx.moveTo(x, y);
-		} else if (type === "drag") {
-			this.ctx.lineTo(x, y);
-			return this.ctx.stroke();
-		} else {
-			return this.ctx.closePath();
-		}
 
+	/*
+		Draw function now takes two points as [x,y] to draw a mini stroke, so there is no need for type argument anymore
+	*/
+	//collabio.prototype.createDraw.prototype.draw = function(x, y, type, color, lineWidth) { // saved this for reference
+	collabio.prototype.createDraw.prototype.draw = function(data ) {
+
+		data.point[0] = data.point[0] * this.canvas.width;
+		data.point[1] = data.point[1] * this.canvas.height;
+		data.point1[0] = data.point1[0] * this.canvas.width;
+		data.point1[1] = data.point1[1] * this.canvas.height;
+
+		this.ctx.strokeStyle = data.color;
+		this.ctx.lineWidth = data.strokeWidth;
+		this.ctx.beginPath();
+		this.ctx.moveTo(data.point[0], data.point[1]);
+		this.ctx.lineTo(data.point1[0], data.point1[1]);
+		this.ctx.stroke();
+		return this.ctx.closePath();
 	};
+
 
 	// Initialization of Drawing
-	collabio.prototype.initDraw = function() {
+	collabio.prototype.renderer = function() {
 		var app = this;
+		while (this.draw.queue[0] !== undefined) {
+			this.draw.draw(this.draw.queue.splice(0,1)[0]);
+		}
+
+		this.draw.rendererID = setTimeout(function() {
+			app.renderer();
+		},0);
+	}
+
+	collabio.prototype.stopRenderer = function() {
+		clearTimeout(this.draw.rendererID);
+	}
+
+	collabio.prototype.initDraw = function() {
+		var app = this,
+		height = $('div.draw').height(),
+		width = $('div.draw').width();
 		this.draw = new this.createDraw();
-
-
-		this.draw.canvas = $('<canvas height="'+$('div.draw').height()+'" width="'+$('div.draw').width()+'"></canvas>').appendTo('div.draw');
+		this.draw.canvas = $("<canvas height=\"" + height + "px\" width=\""+width+"px\" />").appendTo('div.draw');
 
 		this.draw.canvas = this.draw.canvas[0];
-		this.draw.record = [];
 		
 		this.draw.canvas.offset = $(this.draw.canvas).offset();
 		this.draw.ctx = this.draw.canvas.getContext("2d");
@@ -218,6 +239,7 @@
 		//Default Stroke Values
 		this.draw.ctx.lineWidth = 1;
 		this.draw.ctx.lineCap = "round";
+		this.renderer();
 
 
 		var color = $("div.colorpalette span.selected").attr("class").split(" ");
@@ -228,20 +250,17 @@
 
 		// Receive other users' drawings
 		this.socket.on('draw', function(data) {
-			if(data==null) return;
-			if (app.draw.allowOthers) {
-				for (var i = 0, limit = data.length; i < limit; i++ ) {
-					app.draw.draw(data[i].x, data[i].y, data[i].type, data[i].color,data[i].stroke);
-				}
-			} else {
-				for (var i = 0, limit = data.length; i < limit; i++ ) {
-					app.draw.record.push(data[i])
-				} 
-			}
+
+			if(data == null) return;
+			console.log("Incoming draw socket!");
+		
+			for (var i = 0,limit = data.length; i < limit; i++) {
+				app.draw.queue.push(data[i]);
+			};
+			
 		});
 
-		// FIX
-		app.draw.lastPoint = 0.0;
+
 
 		// re-calculate offsets for correct drawinf in case of window resizing
 		$(window).on('resize', function() {
@@ -256,53 +275,55 @@
 			$(this).addClass("selected");
 		});
 
-
+		
 		/*
-		Drawing user's
+			Drawing user's
 		*/
 
 		$('canvas').on('drag dragstart dragend', function(e) {
-
 			
 			var offset, type, x, y;
 			type = e.handleObj.type;
 			offset = $(this).offset();
 
-			if (e.type =='dragstart') {
-				 app.draw.chunk = [];
-				 app.draw.allowOthers = false;
-
-				// FIX
-				
-			}
-
 			e.offsetX = e.clientX - app.draw.canvas.offset.left + window.scrollX;
 			e.offsetY = e.clientY - app.draw.canvas.offset.top + window.scrollY;
-			x = e.offsetX;
-			y = e.offsetY;
+			
+			// Relative positioning fix
+			x = e.offsetX / app.draw.canvas.width;
+			y = e.offsetY / app.draw.canvas.height;
 
-			app.draw.draw(x, y, type,app.draw.ctx.strokeStyle, app.draw.ctx.lineWidth);
+			console.log("x,y :" + x + "," + y);
+			if (e.type =='dragstart') { // support for single dots included
+				// FIX 
+				app.draw.queue.push({
+					point: [x, y], 
+					point1: [x, y], 
+					color: app.draw.ctx.strokeStyle, 
+					strokeWidth : app.draw.ctx.lineWidth
+				});
+			} else  {
+				app.draw.queue.push({
+					point: app.draw.lastPoint, 
+					point1: [x, y], 
+					color: app.draw.ctx.strokeStyle, 
+					strokeWidth : app.draw.ctx.lineWidth
+				});
+			} 
+			
+			
 			var emitData = {
-				x: x,
-				y: y,
-				type: type,
+				point: app.draw.lastPoint,
+				point1: [x, y],
+				strokeWidth: app.draw.ctx.lineWidth,
 				color: app.draw.ctx.strokeStyle
 			};
 
-			app.draw.chunk.push(emitData);
-			
-			if (e.type =='dragend') {
-				app.socket.emit('drawClick', app.draw.chunk);
-				app.draw.allowOthers = true;
-				for (var i = 0, limit = app.draw.record.length; i < limit; i ++) {
-					app.draw.draw(app.draw.record[i].x, app.draw.record[i].y, app.draw.record[i].type,app.draw.record[i].color,app.draw.record[i].stroke);
-				}
-				app.draw.record = [];
-			}
-			
+			app.socket.emit('drawClick', emitData);
+			app.draw.lastPoint = [x, y];
 		});
-
-
+			
+	
 		// clear button interaction
 		$('span.clear').on('click', function(){
 
@@ -443,7 +464,7 @@
 			app.questionsP.append(question.pointer);
 		});
 
-	}
+	};
 
 	window.Collabio = collabio;
 })(window);
