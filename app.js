@@ -182,7 +182,8 @@ io.sockets.on('connection', function (socket) {
 			text: post.question,
 			upvotes: [],
 			downvotes: [],
-			askedBy: socket.id
+			askedBy: socket.id,
+			name: post.name
 		};
 
 		roomQuestions.push(question);

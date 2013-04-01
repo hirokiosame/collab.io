@@ -17,11 +17,10 @@ body {
 	box-sizing: border-box;
 	padding-top: 51px !important;
 }
-//body,html {
+body,html {
 	min-width:1280px !important;
 	width:1280px !important;
 }
-
 
 
 .modal{
@@ -259,72 +258,41 @@ ul.questions li .span {
 }
 
 
-
-/*
-
-.question {
-	height: 40px;
-	padding-top: 14px;
-	width: 380px;
-	border: 10px solid #fff;
-}
-
-#question_area a:visited {
-	color: #08c;
-	float: right;
-	text-decoration: none;
-}
-
-#question_area li {
-    list-style-type: none;
-}
-div.questions textarea {
-
-}
-div.questions textarea:hover {
-	outline: none;
-
-}
-#quest_box {
-	width: 100%;
-}
-div.questions textarea:focus {
-	outline: none;
-	box-shadow: none;
-}
-
-
-
-/*
-
-
-
-.left {
-	overflow:hidden;
-}
-.span4.column.right {
-	margin-left: 0;
-	width:34.188034188% !important;
-}
-
-
-
-.column{
-	padding-top: 41px;
+.messageWrap {
+	overflow: hidden;
+	margin-top: 14px;
+	list-style: none;
 	position: relative;
+	margin: 13px;
+	margin-top: 0;
 }
-.column.left{
-	height: 100%;
-	border-right:1px solid #cdcdcd;
-}
-.column.left canvas{
-	width:100%;
-	border-bottom: 1px solid #cdcdcd;
+.self {
+	float: right;
+	border: 1px solid rgb(151, 195, 206);
+	padding: 10px;
+	border-radius: 4px;
+	background: rgb(231, 246, 255);
+	max-width: 300px;
 }
 
-.span4.column.right {
-	margin-left: 0;
-	width: 435px !important;
+.notSelf {
+	float: left;
+	border: 1px solid rgb(177, 177, 177);
+	padding: 10px;
+	border-radius: 4px;
+	background: rgb(243, 243, 243);
+	max-width: 300px;
 	
+}
+.userName {
+	display: block;
+}
+
+.questionText {
+	margin-left: 10px;
+	display: block;
+}
+.questionText .userName {
+	color: #777;
 }
 

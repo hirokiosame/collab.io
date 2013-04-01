@@ -43,11 +43,13 @@
 		$("<a />", {class : "down", html : "&#9660;"}).appendTo(this.pointer[0]);
 		//$("<a />", {class : "evernote", html : "Save to Evernote"}).appendTo(this.pointer[0]);
 
-		$("<span />", {class : "questionText", html : p.text }).appendTo(this.pointer[0]);
-
-		if( app.userId == input.askedBy || app.userId == app.adminId ){
+		if( app.userId == input.askedBy || app.userId == app.adminId) {
 			$("<a />", {class : "remove", html : "&#x00d7;"}).appendTo(this.pointer[0]);
 		}
+
+		var qt = $("<span />", {class : "questionText", html : p.text });
+		$("<span />", {class : "userName", html : input.name+" asks:" }).prependTo(qt);
+		qt.appendTo(this.pointer[0]);
 
 	}
 
@@ -114,12 +116,14 @@
 		$("div.modal form").submit(function(e){
 			e.preventDefault();
 
+			app.user = $(this).serializeObject();
 			//!Check if user name is blank or is invalid
 
+
 			if( app.roomID() ) {
-				app.socket.emit('joinRoom', $(this).serializeObject());
+				app.socket.emit('joinRoom', app.user);
 			} else {
-				app.socket.emit('createRoom', $(this).serializeObject());
+				app.socket.emit('createRoom', app.user);
 			}
 		});
 
@@ -159,16 +163,28 @@
 
 		//Receive Chat Messages
 		this.socket.on('receiveChat', function(data){
-			if(data==null) return;
+			if (data == null) {
+				return;
+			} 
+
 			data.forEach(function(e) {
 				var time = new Date(e.time),
-				message = $('<li />',{title:time.getHours() + ':' + time.getMinutes() + ':' + time.getSeconds()});
-				$('<span/>',{class:'userName', text:e.userName}).appendTo(message);
-				$('<span/>',{class:'chatMessage', text:e.text}).appendTo(message);
-				$("ul.conversation").append(message);
+				messageWrap = $('<li />',{title:time.getHours() + ':' + time.getMinutes() + ':' + time.getSeconds(), class: "messageWrap"}),
+				message = $('<div />').appendTo(messageWrap);
+				
+				// iMessage style messages
+				if (e.userName == app.user.name) {
+					message.addClass('self');
+				} else {
+					message.addClass('notSelf');
+				}
+
+				$('<span/>',{class:'userName', text: e.userName}).appendTo(message);
+				$('<span/>',{class:'chatMessage', text: e.text}).appendTo(message);
+				$("ul.conversation").append(messageWrap);
 			});
 			
-			$("ul.conversation").scrollTop($("ul.conversation").height());
+			$('ul.conversation').stop().animate({ scrollTop: $("ul.conversation")[0].scrollHeight}, 200);
 		});
 	};
 
@@ -221,21 +237,28 @@
 		clearTimeout(this.draw.rendererID);
 	}
 
+	/*
+		For future use as resizing canvas
+	*/
+	collabio.prototype.makeCanvas = function(width,height) {
+
+	}
+
 	collabio.prototype.initDraw = function() {
 		var app = this,
-		height = $('div.draw').height(),
-		width = $('div.draw').width();
+		width = $('div.draw').width(),
+		height = width / 2.73;
+		$('div.draw').height(height);
+
+		
 		this.draw = new this.createDraw();
 		this.draw.canvas = $("<canvas height=\"" + height + "px\" width=\""+width+"px\" />").appendTo('div.draw');
-
 		this.draw.canvas = this.draw.canvas[0];
-		
 		this.draw.canvas.offset = $(this.draw.canvas).offset();
 		this.draw.ctx = this.draw.canvas.getContext("2d");
 		this.draw.ctx.rect(0, 0, this.draw.canvas.width, this.draw.canvas.height);
 		this.draw.ctx.fillStyle = "white";
 		this.draw.ctx.fill();
-
 		//Default Stroke Values
 		this.draw.ctx.lineWidth = 1;
 		this.draw.ctx.lineCap = "round";
@@ -243,30 +266,30 @@
 
 
 		var color = $("div.colorpalette span.selected").attr("class").split(" ");
-
 		this.draw.ctx.strokeStyle = color[0];
 
 
 
 		// Receive other users' drawings
 		this.socket.on('draw', function(data) {
-
 			if(data == null) return;
-			console.log("Incoming draw socket!");
-		
+			console.log(data);
 			for (var i = 0,limit = data.length; i < limit; i++) {
 				app.draw.queue.push(data[i]);
 			};
-			
 		});
 
 
 
-		// re-calculate offsets for correct drawinf in case of window resizing
+		// re-calculate offsets for correct drawing in case of window resizing
+		// re draw with scale
 		$(window).on('resize', function() {
-			//app.draw.rect(0, 0, $('div.draw').width(), $('div.draw').height());
-			//$("canvas").attr("width", $('div.draw').width()).attr("height", $('div.draw').height());
 			app.draw.canvas.offset = $(app.draw.canvas).offset();
+			
+			// redraw canvas here
+			var width = $('div.draw').width(),
+			height = width / 2.73;
+			$('div.draw').height(height);
 		});
 
 		$("div.colorpalette span").on("click", function(e){
@@ -274,6 +297,8 @@
 			app.draw.ctx.strokeStyle = $(this).attr("class");
 			$(this).addClass("selected");
 		});
+
+		
 
 		
 		/*
@@ -302,6 +327,7 @@
 					color: app.draw.ctx.strokeStyle, 
 					strokeWidth : app.draw.ctx.lineWidth
 				});
+				app.draw.lastPoint = [x, y];
 			} else  {
 				app.draw.queue.push({
 					point: app.draw.lastPoint, 
@@ -355,7 +381,6 @@
 			app.draw.ctx.strokeStyle = "#123";
 			app.draw.ctx.lineWidth = 2;
 		});
-
 	};
 
 
@@ -368,7 +393,10 @@
 		// submit new question
 		$(".questions form").submit(function(e){
 			e.preventDefault();
-			app.socket.emit('askQuestion', $(this).serializeObject());
+			var req = $(this).serializeObject();
+			req.name = app.user.name;
+
+			app.socket.emit('askQuestion',req );
 			$(this)[0].reset();
 		});
 
@@ -400,6 +428,7 @@
 					app.questions.push(question);
 					app.questionDict[question.id] = question;
 					app.renderQuestions();
+
 
 				} else { // upvote or downvote
 					console.log("Receiving socket: upvote or downvote... id : "+data[0].id);
