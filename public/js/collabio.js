@@ -41,6 +41,7 @@
 		$("<a />", {class : "up", html : "&#9650;"}).appendTo(this.pointer[0]);
 		$("<a />", {class : "score", text : this.score }).appendTo(this.pointer[0]);
 		$("<a />", {class : "down", html : "&#9660;"}).appendTo(this.pointer[0]);
+		$("<a />", {class : "save", html : "Save to Evernote"}).appendTo(this.pointer[0]);
 		//$("<a />", {class : "evernote", html : "Save to Evernote"}).appendTo(this.pointer[0]);
 
 		if( app.userId == input.askedBy || app.userId == app.adminId) {
@@ -136,16 +137,15 @@
 			app.userId = data.userId;
 			$('div.modal.getRoom').modal('hide');
 
-			evernote.initialize();
+			
 		});
 
 		this.socket.on('roomNotAvailable', function(data){
-			alert(data);
 			document.location = "/";
 		});
 
 		// HERE should go evernote authorisation
-		evernote.bindSave();
+		
 	};
 
 	/*
@@ -198,6 +198,7 @@
 		this.rendererID;
 		// queue contains all the pairs needed to be rendered
 		this.queue = [];
+		this.history = [];
 	};
 
 	/*
@@ -205,17 +206,20 @@
 	*/
 	//collabio.prototype.createDraw.prototype.draw = function(x, y, type, color, lineWidth) { // saved this for reference
 	collabio.prototype.createDraw.prototype.draw = function(data ) {
+		var dp = [0,0],
+		dp1 = [0,0];
 
-		data.point[0] = data.point[0] * this.canvas.width;
-		data.point[1] = data.point[1] * this.canvas.height;
-		data.point1[0] = data.point1[0] * this.canvas.width;
-		data.point1[1] = data.point1[1] * this.canvas.height;
+		dp[0] = data.point[0] * this.canvas.width;
+		dp[1] = data.point[1] * this.canvas.height;
+		dp1[0] = data.point1[0] * this.canvas.width;
+		dp1[1] = data.point1[1] * this.canvas.height;
+
 
 		this.ctx.strokeStyle = data.color;
 		this.ctx.lineWidth = data.strokeWidth;
 		this.ctx.beginPath();
-		this.ctx.moveTo(data.point[0], data.point[1]);
-		this.ctx.lineTo(data.point1[0], data.point1[1]);
+		this.ctx.moveTo(dp[0], dp[1]);
+		this.ctx.lineTo(dp1[0], dp1[1]);
 		this.ctx.stroke();
 		return this.ctx.closePath();
 	};
@@ -240,8 +244,34 @@
 	/*
 		For future use as resizing canvas
 	*/
-	collabio.prototype.makeCanvas = function(width,height) {
+	collabio.prototype.redraw = function(width,height) {
+		console.log('redraw' + width + " " + height);
+		$(this.draw.canvas).remove();
 
+		this.draw.canvas = $("<canvas height=\"" + height + "px\" width=\""+width+"px\" />").appendTo('div.draw');
+		this.draw.canvas = this.draw.canvas[0];
+		this.draw.canvas.offset = $(this.draw.canvas).offset();
+		this.draw.ctx = this.draw.canvas.getContext("2d");
+		this.draw.ctx.rect(0, 0, this.draw.canvas.width, this.draw.canvas.height);
+		this.draw.ctx.fillStyle = "white";
+		this.draw.ctx.fill();
+		
+		var color = $("div.colorpalette span.selected").attr("class").split(" ");
+		this.draw.ctx.strokeStyle = color[0];
+
+		//Default Stroke Values
+		this.draw.ctx.lineWidth = 1;
+		this.draw.ctx.lineCap = "round";
+		this.stopRenderer();
+		this.renderer();
+
+		for (var i = this.draw.history.length - 1; i >= 0; i--) {
+			console.log('redraw stroke');
+			this.draw.draw(this.draw.history[i]);
+		};
+
+		this.offDrawIntercation();
+		this.onDrawIntercation();
 	}
 
 	collabio.prototype.initDraw = function() {
@@ -276,20 +306,36 @@
 			console.log(data);
 			for (var i = 0,limit = data.length; i < limit; i++) {
 				app.draw.queue.push(data[i]);
+				app.draw.history.push(data[i]);
 			};
 		});
 
+		this.socket.on('evernoteSaveComplete', function(data) {
+			if(data == null) return;
+			console.log(data);
+			
+			// Save Evernote
+
+		});
 
 
 		// re-calculate offsets for correct drawing in case of window resizing
 		// re draw with scale
 		$(window).on('resize', function() {
-			app.draw.canvas.offset = $(app.draw.canvas).offset();
-			
+			app.resizing = true;
 			// redraw canvas here
-			var width = $('div.draw').width(),
+			var preWidth = $('div.draw').width();
+			width = $('div.draw').width(),
 			height = width / 2.73;
+
+			//$('div.draw').height(height);
+
+			//var scale = ((width / preWidth) * 100) + "%";
+			//$("canvas").css('width',scale);
+			//app.draw.canvas.offset = $(app.draw.canvas).offset();
 			$('div.draw').height(height);
+		
+			app.redraw(width,height);
 		});
 
 		$("div.colorpalette span").on("click", function(e){
@@ -304,9 +350,14 @@
 		/*
 			Drawing user's
 		*/
+		this.onDrawIntercation();
+		
+	};
 
+	collabio.prototype.onDrawIntercation = function() {
+		var app = this;
 		$('canvas').on('drag dragstart dragend', function(e) {
-			
+			console.log('uD');
 			var offset, type, x, y;
 			type = e.handleObj.type;
 			offset = $(this).offset();
@@ -339,11 +390,13 @@
 			
 			
 			var emitData = {
-				point: app.draw.lastPoint,
+				point: [app.draw.lastPoint[0],app.draw.lastPoint[1]],
 				point1: [x, y],
 				strokeWidth: app.draw.ctx.lineWidth,
 				color: app.draw.ctx.strokeStyle
 			};
+
+			app.draw.history.push(emitData);
 
 			app.socket.emit('drawClick', emitData);
 			app.draw.lastPoint = [x, y];
@@ -354,34 +407,21 @@
 		$('span.clear').on('click', function(){
 
 			// clear canvas locally
-			app.draw.draw(0, 0, "dragstart","#fff",10000);
-			app.draw.draw(400, 800, "drag","#fff",10000);
-			app.draw.draw(400, 800, "dragend","#fff",10000);
-
-			var clear = [{
-				x: 0,
-				y: 0,
-				type: "dragstart",
-				color: "#fff",
-				stroke: 10000
-			},{
-				x: 400,
-				y: 800,
-				type: "drag",
-				color: "#fff",
-				stroke: 10000
-			},{
-				x: 400,
-				y: 800,
-				type: "dragend",
-				color: "#123",
-				stroke: 2
-			}];
-			app.socket.emit('drawClick',clear);
-			app.draw.ctx.strokeStyle = "#123";
-			app.draw.ctx.lineWidth = 2;
+			app.draw.canvas.width = app.draw.canvas.width;
+			app.socket.emit('clear',0);
+			app.draw.history = [];
 		});
-	};
+
+		this.socket.on('doClear',function(data) {
+			app.draw.history = [];
+			app.draw.canvas.width = app.draw.canvas.width;
+		});
+	}
+
+	collabio.prototype.offDrawIntercation = function() {
+		$('canvas').off('drag dragstart dragend');
+		$('span.clear').off('click');
+	}
 
 
 	/*
@@ -465,13 +505,15 @@
 			console.log("delete id : " + questionID);
 			app.socket.emit('removeQuestion',questionID);
 		});
-		$(document).on('click','a.evernote', function() {
-			var questionID = $(this).parent()[0].qid;
-			console.log("delete id : " + questionID);
-			app.socket.emit('saveEvernote',questionID);
+		$(document).on('click','a.save', function() {
+
+			var questionID = $(this).parent()[0].qid,
+			img = app.draw.canvas.toDataURL();
+			console.log("save id : " + img);
+
+			app.socket.emit('evernoteSave',img);
 		});
 	};
-
 
 	// Render Questions in case of initial appends, additional append, downvote or upvote
 

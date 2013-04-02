@@ -2,7 +2,8 @@ var express = require('express'),
 	http = require('http'),
 	path = require('path'),
 	app = express(),
-	fs = require('fs');
+	fs = require('fs'),
+	md5 = require('MD5');
 
 
 app.configure(function(){
@@ -57,7 +58,6 @@ app.get('/save/:id', function(req, res){
 	evernote.roomId = req.params.id;
 	console.log(evernote);
 	res.render('save', evernote);
-
 });
 
 
@@ -254,12 +254,6 @@ io.sockets.on('connection', function (socket) {
 		console.log(data);
 		var roomDrawing = io.sockets.manager.roomDrawing;
 
-
-		/* Not sure what purpose this serves */
-		if (data.color == "#fff") {
-			roomDrawing = [];
-		}
-
 		if(roomDrawing['/'+socket.roomId]){
 			roomDrawing['/'+socket.roomId] = roomDrawing['/'+socket.roomId].concat(data);
 		}
@@ -276,24 +270,40 @@ io.sockets.on('connection', function (socket) {
 	});
 
 
+	// Clear canvas 
+	socket.on('clear', function(data) {
+		io.sockets.manager.roomDrawing['/'+socket.roomId ] = [];
+		socket.broadcast.to(socket.roomId).emit('doClear', 0);
+	});
+
+	// get room drawing
+	socket.on('getRoomDrawing', function(data) {
+		socket.emit('roomDrawing', io.sockets.manager.roomDrawing['/'+socket.roomId ]);
+	});
+
 	//Evernote
 	socket.on('evernoteSave', function(data) {
+		console.log('evernote save');
+		console.log(data)
 
 		console.log("Saving to evernote...");
-		var base64Data = data.path.replace(/^data:image\/png;base64,/, "");
-		require("fs").writeFile("./images/"+user.roomId+".png", base64Data, 'base64', function(err) {
-			console.log(err);
+		var base64Data = data.replace(/^data:image\/png;base64,/, ""),
+		binaryFile = binaryData = new Buffer(base64Data, 'base64').toString('binary');
+
+
+		var signature = md5(binaryFile),
+		hexFile = new Buffer(base64Data, 'base64').toString('hex');
+
+		socket.emit('evernoteSaveComplete',{
+			sign: signature,
+			hex : hexFile
 		});
 
-		//var spawn = require('child_process').spawn;
-		//var evernote = spawn('python', ['./evernote/EDAMTest.py',require('path').dirname(require.main.filename)+"/images/"+user.roomId+".png", rooms[user.roomId].questions[data.qid].text, rooms[user.roomId].questions[data.qid]].text);
+		/*
+		require("fs").writeFile("./images/"+user.roomId+".png", base64Data, 'base64', function(err) {
+			console.log(err);
+		});*/
 
-		var sys = require('sys')
-		var exec = require('child_process').exec;
-		function puts(error, stdout, stderr) { sys.puts(stdout) }
-
-		console.log(rooms[user.roomId].questions[data.qid].text);
-		exec("python '"+require('path').dirname(require.main.filename)+"/evernote/EDAMTest.py' '"+require('path').dirname(require.main.filename)+"/images/"+user.roomId+".png' '"+rooms[user.roomId].questions[data.qid].text+"' '"+rooms[user.roomId].questions[data.qid].text+"'", puts);
 	});
 
 

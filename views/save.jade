@@ -4,4 +4,5 @@ block content
 	script
 		evernote.initialize();
 		evernote.callback("#{oauth_verifier}", "#{oauth_token}", "#{roomId}");
+		window.location.replace("/");
 	div Saved!
