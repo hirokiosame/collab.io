@@ -340,7 +340,7 @@
 			//app.draw.canvas.offset = $(app.draw.canvas).offset();
 			//$('div.draw').height(height);
 
-			$("canvas").attr("width", width).attr("height", $("div.draw").height());
+			$("canvas").attr("width", width).attr("height", height);
 			app.redraw(width, height);
 		});
 
