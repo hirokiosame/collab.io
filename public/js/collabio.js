@@ -105,7 +105,7 @@
 		}
 
 		// Shows initial dialogue 
-		$('div.modal').on('shown', function () {
+		$('div.getRoom').on('shown', function () {
 			$("input.name").focus();
 		}).modal({
 			backdrop: "static",
@@ -114,7 +114,7 @@
 		});
 
 		//Sign In
-		$("div.modal form").submit(function(e){
+		$("div.getRoom form").submit(function(e){
 			e.preventDefault();
 
 			app.user = $(this).serializeObject();
@@ -135,7 +135,7 @@
 			//Admin not working. Needs to receive client array instead
 			app.room.adminId = data.roomAdmin;
 			app.userId = data.userId;
-			$('div.modal.getRoom').modal('hide');
+			$('div.getRoom').modal('hide');
 
 			
 		});

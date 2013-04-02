@@ -23,7 +23,7 @@ body,html {
 }
 
 
-.modal{
+.modal.getRoom{
 	width: 360px;
 	margin-left: -180px;
 	border-radius: 0;
@@ -33,7 +33,7 @@ body,html {
 .modal-body {
 	padding: 0 !important;
 }
-.modal form input.name{
+.modal.getRoom form input.name{
 	font-size: 25px;
 	width: 330px;
 	border-radius: 0;
@@ -47,7 +47,7 @@ body,html {
 	font-weight: 100 !important;
 	text-align: center;
 }
-.modal form button{
+.modal.getRoom form button{
 	font-weight: 100 !important;
 	width: 360px;
 	border: 0px solid #222;
@@ -55,12 +55,20 @@ body,html {
 	background-color: #fff;
 	font-size: 22px;
 }
-.modal form button:hover {
+.modal.getRoom form button:hover {
 	width: 360px;
 	background-color: #eee;
 }
 
 
+.modal.Evernote{
+	display: none;
+	width: 360px;
+	margin-left: -180px;
+	border-radius: 0;
+	font-weight: 100 !important;
+	top: 20%;
+}
 
 .navbar-inner{
 	height: 50px !important;
@@ -75,6 +83,7 @@ body,html {
 	padding: 15px;
 	color: #000;
 	border-left: 1px solid #cdcdcd;
+	cursor: pointer;
 }
 .navbar .nav > li:hover {
 	background-color: #eee;
