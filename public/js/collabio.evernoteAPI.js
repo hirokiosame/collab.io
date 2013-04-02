@@ -7,6 +7,15 @@ var evernote = {
 			callbackUrl: getSaveURL(),
 			signatureMethod: "HMAC-SHA1"
 		});
+		evernote.request(function(){
+			if(evernote.oauthInfo["oauth_callback_confirmed"] == "true"){
+				localStorage.setItem("oauth_token_secret", evernote.oauthInfo.oauth_token_secret);
+				console.log(evernote.oauthInfo)
+				$("a.saveEvernote").attr("href", evernote.hostName+'/OAuth.action?oauth_token='+evernote.oauthInfo.oauth_token);
+			}else{
+				console.log("Not confirmed");
+			}
+		});
 	},
 	oauthInfo: {},
 	request: function(callback){
@@ -25,25 +34,6 @@ var evernote = {
 				console.log("failure!");
 				console.log(e);
 			}
-		});
-	},
-	bindSave: function(){
-		var evernote = this;
-		$("a.saveEvernote").click(function(e){
-			alert("HI");
-			e.preventDefault();
-
-			console.log(e);
-			evernote.request(function(){
-				if(evernote.oauthInfo["oauth_callback_confirmed"] == "true"){
-					localStorage.setItem("oauth_token_secret", evernote.oauthInfo.oauth_token_secret);
-
-					//var ref = window.open(evernote.hostName+'/OAuth.action?oauth_token='+evernote.oauthInfo.oauth_token, '_blank', 'height=550,width=800,top=100,left=250');
-
-				}else{
-					console.log("Not confirmed");
-				}
-			});
 		});
 	},
 	createNote: function(roomId, guid){
@@ -72,6 +62,10 @@ var evernote = {
 	},
 	callback: function(oauth_verifier, oauth_token, roomId){
 		var evernote = this;
+
+		//Store Values in local storage
+		localStorage.setItem("oauth_verifier", oauth_verifier);
+		localStorage.setItem("oauth_token", oauth_token);
 
 		//Step 3
 		this.oauth.setVerifier(oauth_verifier);

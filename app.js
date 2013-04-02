@@ -78,8 +78,9 @@ io.sockets.on('connection', function (socket) {
 
 	//Check if Room Requested Exists
 	var roomUrl = socket.handshake.headers.referer,
-		roomId = roomUrl.split('/').pop();
-	if( roomId!="" && !io.sockets.manager.rooms['/'+roomId] ){
+		roomId = roomUrl.split('/');
+
+	if( roomId.length>4 && roomId[3]=="r"  && !io.sockets.manager.rooms['/'+roomId[4]] ){
 		socket.emit('roomNotAvailable', "The room you requested is no longer available.");
 	}
 
@@ -251,7 +252,7 @@ io.sockets.on('connection', function (socket) {
 
 	/* Drawing */
 	socket.on('drawClick', function(data) {
-		console.log(data);
+		//console.log(data);
 		var roomDrawing = io.sockets.manager.roomDrawing;
 
 		if(roomDrawing['/'+socket.roomId]){
@@ -305,7 +306,6 @@ io.sockets.on('connection', function (socket) {
 		});*/
 
 	});
-
 
 	socket.on('disconnect', function(){
 		if( socket.roomId == undefined ) return;

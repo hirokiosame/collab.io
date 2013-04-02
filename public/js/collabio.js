@@ -1,5 +1,4 @@
 (function(){
-
 	/*
 		Serialization before sending to server
 	*/
@@ -56,6 +55,7 @@
 
 	// Global Object for Collabio
 	var collabio = function () {
+
 		this.socket = io.connect();
 		this.room = {
 			id : [],
@@ -89,7 +89,6 @@
 			return false;
 		}
 	};
-
 
 	/*
 	Initialize global app
@@ -137,17 +136,15 @@
 			app.userId = data.userId;
 			$('div.getRoom').modal('hide');
 
-			
+
+			evernote.initialize();
 		});
 
 		this.socket.on('roomNotAvailable', function(data){
 			document.location = "/";
-		});
-
-		// HERE should go evernote authorisation
-		evernote.bindSave();
-		
+		});		
 	};
+
 
 	/*
 	Chat events and interaction
