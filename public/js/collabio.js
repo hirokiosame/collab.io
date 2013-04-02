@@ -136,7 +136,9 @@
 			app.userId = data.userId;
 			$('div.getRoom').modal('hide');
 
-
+		//	$("a.tablet").click(function(){
+			//	alert(location.protocol + "//" + location.hostname + (location.port && ":" + location.port) + "/t/"+data.roomId);
+			//});
 			evernote.initialize();
 		});
 
