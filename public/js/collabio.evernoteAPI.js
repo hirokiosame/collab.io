@@ -29,21 +29,17 @@ var evernote = {
 	},
 	bindSave: function(){
 		var evernote = this;
-		$("a.saveEvernote").click(function(){
+		$("a.saveEvernote").click(function(e){
+			alert("HI");
+			e.preventDefault();
 
+			console.log(e);
 			evernote.request(function(){
 				if(evernote.oauthInfo["oauth_callback_confirmed"] == "true"){
 					localStorage.setItem("oauth_token_secret", evernote.oauthInfo.oauth_token_secret);
 
-					// Shows dialogue 
-					$('div.modal.Evernote').on('shown', function () {
-						//$("iframe").attr("src", evernote.hostName+'/OAuth.action?oauth_token='+evernote.oauthInfo.oauth_token);
-						//var ref = window.open(evernote.hostName+'/OAuth.action?oauth_token='+evernote.oauthInfo.oauth_token, '_blank', 'height=550,width=800,top=100,left=250');
-					}).modal({
-						backdrop: "static",
-						show: true,
-						keyboard: false
-					});
+					//var ref = window.open(evernote.hostName+'/OAuth.action?oauth_token='+evernote.oauthInfo.oauth_token, '_blank', 'height=550,width=800,top=100,left=250');
+
 				}else{
 					console.log("Not confirmed");
 				}

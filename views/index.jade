@@ -6,11 +6,6 @@ block content
 			form.form-inline
 				input.name(type="text", name="name", placeholder="What's your name?", autocomplete="off")
 				button Create Room!
-
-	div.modal.Evernote
-		div.modal-body
-			iframe(name="login", src="https://sandbox.evernote.com/OAuth.action?oauth_token=hirokiosame.13DCBFBC9C4.687474703A2F2F6C6F63616C686F73743A333030312F736176652F7A63716A786F7172.C0CC928A254EA2479D05E849B34F3601")
-
 	div.navbar.navbar-fixed-top
 		div.navbar-inner
 			div.container
@@ -23,7 +18,7 @@ block content
 						li: a(href="/") collab.io
 						li: a(href="/") Create a New Room
 						li: a(href="") Active Users
-						li: a.saveEvernote Save to Evernote
+						li: a.saveEvernote(target="_blank") Save to Evernote
 	div.container-fluid
 		div.row-fluid
 			div.span8

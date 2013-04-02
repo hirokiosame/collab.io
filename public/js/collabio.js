@@ -145,6 +145,7 @@
 		});
 
 		// HERE should go evernote authorisation
+		evernote.bindSave();
 		
 	};
 
