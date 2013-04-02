@@ -277,8 +277,10 @@
 	collabio.prototype.initDraw = function() {
 		var app = this,
 		width = $('div.draw').width(),
-		height = width / 2.73;
-		$('div.draw').height(height);
+		height = $("div.draw").height();
+		//height = width / 2.73;
+		//$('canvas').height(height);
+	//	$('canvas').height($("div.draw").height()*0);
 
 		
 		this.draw = new this.createDraw();
@@ -326,16 +328,20 @@
 			// redraw canvas here
 			var preWidth = $('div.draw').width();
 			width = $('div.draw').width(),
-			height = width / 2.73;
+
+
+			//height = width / 2.73;
+			height = $("div.draw").height();
 
 			//$('div.draw').height(height);
 
 			//var scale = ((width / preWidth) * 100) + "%";
 			//$("canvas").css('width',scale);
 			//app.draw.canvas.offset = $(app.draw.canvas).offset();
-			$('div.draw').height(height);
-		
-			app.redraw(width,height);
+			//$('div.draw').height(height);
+
+			$("canvas").attr("width", width).attr("height", $("div.draw").height());
+			app.redraw(width, height);
 		});
 
 		$("div.colorpalette span").on("click", function(e){
