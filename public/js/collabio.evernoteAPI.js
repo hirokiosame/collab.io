@@ -36,30 +36,40 @@ var evernote = {
 			}
 		});
 	},
-	createNote: function(roomId, guid){
-		var evernote = this;
 
-		var note = new Note;
+	createNote: function(roomId, guid, image, hash,text){
+		var evernote = this,
+		note = new Note;
+
 		note.title = "Room "+roomId;
 		note.notebookGuid = guid;
 
+		var data = new Data;
+		data.size = image.length;
+		data.bodyHash = hash;
+		data.body = image;
+
+		var resource = new Resource;
+		resource.mime = 'image/png';
+		resource.data = data;
+		note.resources = [resource];
+
 		note.content  = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 		note.content += "<!DOCTYPE en-note SYSTEM \"http://xml.evernote.com/pub/enml2.dtd\">";
-		note.content += "<en-note>";
-		note.content += 	"<span style=\"font-weight:bold;\">Collab.io</span><br /><span>test note. test note. test note. test note. </span><br />";
-		note.content += "</en-note>";
+
+		note.content += '<en-note><span style=\"font-weight:bold;\">Collab.io</span>'+text+'<br/>';
+		note.content += '<en-media type="image/png" hash="' + hash + '"/>';
+		note.content += '</en-note>';
 
 		evernote.noteStore.createNote(
 			evernote.oauthInfo.oauth_token,
 			note,
 			function (noteCallback) {
 				console.log(noteCallback.guid + " created");
-
-				//Show Success Alert
-				//Close itself(popup)
 			}
 		);
 	},
+
 	callback: function(oauth_verifier, oauth_token, roomId){
 		var evernote = this;
 
@@ -103,6 +113,50 @@ var evernote = {
 								if(nb.name==notebook.name){
 									console.log("Notebook found.");
 									evernote.createNote(roomId, nb.guid);
+								}
+							});
+						},
+						function onerror(error){
+							//Error Listing Notebooks
+							console.log(error);
+						}
+					);
+				}
+			);
+
+		});
+	},
+
+	createSaveNote : function(text,img,hash) {
+		evernote.request(function(){
+			evernote.noteStoreTransport = new Thrift.BinaryHttpTransport(evernote.oauthInfo.edam_noteStoreUrl);
+			evernote.noteStoreProtocol = new Thrift.BinaryProtocol(evernote.noteStoreTransport);
+			evernote.noteStore = new NoteStoreClient(evernote.noteStoreProtocol);
+
+			/* Create Notebook */
+			var notebook = new Notebook;
+			notebook.name = "collab.io";
+
+			evernote.noteStore.createNotebook(
+				evernote.oauthInfo.oauth_token,
+				notebook,
+				function(notebook){
+					//Successfully Created Notebook
+					console.log("Notebook created!");
+					console.log(notebook);
+					evernote.createNote(roomId, notebook.guid);
+				},
+				function onerror(error){
+					//Notebook already exists
+					//Find it!
+					evernote.noteStore.listNotebooks(
+						evernote.oauthInfo.oauth_token,
+						function (notebooks) {
+							//Find Collabio Notebook
+							notebooks.forEach(function(nb){
+								if(nb.name==notebook.name){
+									console.log("Notebook found.");
+									evernote.createNote(roomId, nb.guid,img, hash, text);
 								}
 							});
 						},

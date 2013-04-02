@@ -70,6 +70,7 @@ var	server = http.createServer(app).listen(app.get('port'), function(){
 io.sockets.manager.roomChat = {};
 io.sockets.manager.roomQuestions = {};
 io.sockets.manager.roomDrawing = {};
+io.sockets.manager.evernoteBinaries = {};
 
 
 io.sockets.on('connection', function (socket) {
@@ -291,20 +292,20 @@ io.sockets.on('connection', function (socket) {
 		var base64Data = data.replace(/^data:image\/png;base64,/, ""),
 		binaryFile = binaryData = new Buffer(base64Data, 'base64').toString('binary');
 
+		io.sockets.manager.evernoteBinaries['/'+socket.roomId] = binaryFile;
 
 		var signature = md5(binaryFile),
 		hexFile = new Buffer(base64Data, 'base64').toString('hex');
 
 		socket.emit('evernoteSaveComplete',{
 			sign: signature,
-			hex : hexFile
+			img : binaryFile
 		});
 
 		/*
 		require("fs").writeFile("./images/"+user.roomId+".png", base64Data, 'base64', function(err) {
 			console.log(err);
 		});*/
-
 	});
 
 	socket.on('disconnect', function(){

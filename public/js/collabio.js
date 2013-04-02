@@ -143,6 +143,8 @@
 		this.socket.on('roomNotAvailable', function(data){
 			document.location = "/";
 		});		
+
+
 	};
 
 
@@ -313,9 +315,9 @@
 		this.socket.on('evernoteSaveComplete', function(data) {
 			if(data == null) return;
 			console.log(data);
-			
-			// Save Evernote
 
+			evernote.createSaveNote("Sample Text", data.img, data.sign);
+			// Save Evernote
 		});
 
 
@@ -516,6 +518,10 @@
 			console.log("save id : " + img);
 
 			app.socket.emit('evernoteSave',img);
+		});
+
+		this.socket.on('evernoteSaveComplete',function(data){
+			evernote.createSaveNote("CollabioNoteevernoteSaveComplete",data.img,data.sign);
 		});
 	};
 
