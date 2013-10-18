@@ -84,91 +84,55 @@ var evernote = {
 			this.oauth.setAccessToken([oauth_token, this.oauthInfo.oauth_token_secret]);		
 		}
 
-		evernote.request(function(){
-			evernote.noteStoreTransport = new Thrift.BinaryHttpTransport(evernote.oauthInfo.edam_noteStoreUrl);
-			evernote.noteStoreProtocol = new Thrift.BinaryProtocol(evernote.noteStoreTransport);
-			evernote.noteStore = new NoteStoreClient(evernote.noteStoreProtocol);
 
-			/* Create Notebook */
-			var notebook = new Notebook;
-			notebook.name = "collab.io";
-
-			evernote.noteStore.createNotebook(
-				evernote.oauthInfo.oauth_token,
-				notebook,
-				function(notebook){
-					//Successfully Created Notebook
-					console.log("Notebook created!");
-					console.log(notebook);
-					evernote.createNote(roomId, notebook.guid);
-				},
-				function onerror(error){
-					//Notebook already exists
-					//Find it!
-					evernote.noteStore.listNotebooks(
-						evernote.oauthInfo.oauth_token,
-						function (notebooks) {
-							//Find Collabio Notebook
-							notebooks.forEach(function(nb){
-								if(nb.name==notebook.name){
-									console.log("Notebook found.");
-									evernote.createNote(roomId, nb.guid);
-								}
-							});
-						},
-						function onerror(error){
-							//Error Listing Notebooks
-							console.log(error);
-						}
-					);
-				}
-			);
-
-		});
+		evernote.createSaveNote("New note!",roomID)
 	},
 
-	createSaveNote : function(text,img,hash) {
-		evernote.request(function(){
-			evernote.noteStoreTransport = new Thrift.BinaryHttpTransport(evernote.oauthInfo.edam_noteStoreUrl);
-			evernote.noteStoreProtocol = new Thrift.BinaryProtocol(evernote.noteStoreTransport);
-			evernote.noteStore = new NoteStoreClient(evernote.noteStoreProtocol);
+	createSaveNote : function(text,roomID) {
+		socket.emit('getBinary',roomID);
+		socket.on('getBinaryComplete',function(binary) {
+			evernote.request(function(){
+				evernote.noteStoreTransport = new Thrift.BinaryHttpTransport(evernote.oauthInfo.edam_noteStoreUrl);
+				evernote.noteStoreProtocol = new Thrift.BinaryProtocol(evernote.noteStoreTransport);
+				evernote.noteStore = new NoteStoreClient(evernote.noteStoreProtocol);
 
-			/* Create Notebook */
-			var notebook = new Notebook;
-			notebook.name = "collab.io";
+				/* Create Notebook */
+				var notebook = new Notebook;
+				notebook.name = "collab.io";
 
-			evernote.noteStore.createNotebook(
-				evernote.oauthInfo.oauth_token,
-				notebook,
-				function(notebook){
-					//Successfully Created Notebook
-					console.log("Notebook created!");
-					console.log(notebook);
-					evernote.createNote(roomId, notebook.guid);
-				},
-				function onerror(error){
-					//Notebook already exists
-					//Find it!
-					evernote.noteStore.listNotebooks(
-						evernote.oauthInfo.oauth_token,
-						function (notebooks) {
-							//Find Collabio Notebook
-							notebooks.forEach(function(nb){
-								if(nb.name==notebook.name){
-									console.log("Notebook found.");
-									evernote.createNote(roomId, nb.guid,img, hash, text);
-								}
-							});
-						},
-						function onerror(error){
-							//Error Listing Notebooks
-							console.log(error);
-						}
-					);
-				}
-			);
-
+				evernote.noteStore.createNotebook(
+					evernote.oauthInfo.oauth_token,
+					notebook,
+					function(notebook){
+						//Successfully Created Notebook
+						console.log("Notebook created!");
+						console.log(notebook);
+						evernote.createNote(roomId, notebook.guid);
+					},
+					function onerror(error){
+						//Notebook already exists
+						//Find it!
+						evernote.noteStore.listNotebooks(
+							evernote.oauthInfo.oauth_token,
+							function (notebooks) {
+								//Find Collabio Notebook
+								notebooks.forEach(function(nb){
+									if(nb.name==notebook.name){
+										console.log("Notebook found.");
+										evernote.createNote(roomId, nb.guid, binary.img, binary.hash, '');
+									}
+								});
+							},
+							function onerror(error){
+								//Error Listing Notebooks
+								console.log(error);
+							}
+						);
+					}
+				);
+			});	
 		});
+		
 	}
 };
 

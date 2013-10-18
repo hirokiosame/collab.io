@@ -7,7 +7,7 @@ var express = require('express'),
 
 
 app.configure(function(){
-	app.set('port', process.env.PORT || 3001);
+	app.set('port', process.env.PORT || 3004);
 	app.set('views', __dirname+'/views');
 	app.set('view engine', 'jade');
 
@@ -170,6 +170,7 @@ io.sockets.on('connection', function (socket) {
 	function inArray(arr, elem){
 		return (arr.indexOf(elem) != -1);
 	}
+	
 	function remElement(arr, elem){
 		if( inArray(arr, elem) ){
 			var id = arr.indexOf(elem);
@@ -283,6 +284,16 @@ io.sockets.on('connection', function (socket) {
 		socket.emit('roomDrawing', io.sockets.manager.roomDrawing['/'+socket.roomId ]);
 	});
 
+	socket.on('getBinary',function(roomId) {
+		var binaryFile = io.sockets.manager.evernoteBinaries['/'+roomId];
+		var signature = md5(binaryFile);
+
+		socket.emit('getBinaryComplete',{
+			sign: signature,
+			img : binaryFile
+		});
+	});
+
 	//Evernote
 	socket.on('evernoteSave', function(data) {
 		console.log('evernote save');
@@ -296,11 +307,6 @@ io.sockets.on('connection', function (socket) {
 
 		var signature = md5(binaryFile),
 		hexFile = new Buffer(base64Data, 'base64').toString('hex');
-
-		socket.emit('evernoteSaveComplete',{
-			sign: signature,
-			img : binaryFile
-		});
 
 		/*
 		require("fs").writeFile("./images/"+user.roomId+".png", base64Data, 'base64', function(err) {

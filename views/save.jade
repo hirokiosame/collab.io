@@ -2,6 +2,7 @@ extends layout
 
 block content
 	script
+		socket = io.connect();
 		evernote.initialize();
 		evernote.callback("#{oauth_verifier}", "#{oauth_token}", "#{roomId}");
 

@@ -513,10 +513,9 @@
 			console.log("delete id : " + questionID);
 			app.socket.emit('removeQuestion',questionID);
 		});
-		$(document).on('click','a.save', function() {
+		$(document).on('click','.saveEvernote', function() {
 
-			var questionID = $(this).parent()[0].qid,
-			img = app.draw.canvas.toDataURL();
+			var img = app.draw.canvas.toDataURL();
 			console.log("save id : " + img);
 
 			app.socket.emit('evernoteSave',img);

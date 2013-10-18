@@ -1,0 +1,26 @@
+{
+  "name": "Collab.io",
+  "version": "1.0.0",
+  "description": "Winter 2013 HackMIT",
+  "private": true,
+  "scripts": {
+    "start": "node app.js"
+  },
+  "contributors": [ 
+    {
+      "name": "Roman Zubenko",
+      "email": "romanz@bu.edu"
+    },
+    {
+      "name": "Hiroki Osame",
+      "email": "hirokio@bu.edu"
+    }
+
+  ],
+
+  "dependencies": {
+    "express": "3.1.1",
+    "MD5" : "*",
+    "jade" : "*"
+  }
+}
